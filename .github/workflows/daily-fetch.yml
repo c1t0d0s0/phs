@@ -1,0 +1,33 @@
+name: Fetch daily JSON (curl)
+
+on:
+  schedule:
+    - cron: "10 21 * * *"   # 毎日 21:10 UTC（JST 06:10）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch JSON via curl
+        run: |
+          curl -fsSL "https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json" -o docs/130000.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+
+          git add docs/130000.json
+          git commit -m "Update 130000.json ($(date -u +'%Y-%m-%d'))"
+          git push

@@ -1,0 +1,1 @@
+const GTM_ID = 'G-S6QX2XHT2D';

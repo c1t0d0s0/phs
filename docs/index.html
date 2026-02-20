@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast (JMA)</title>
+    <script src="config.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async :src="'https://www.googletagmanager.com/gtag/js?id=' + GTM_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', GTM_ID);
+    </script>
+    <style>
+        :root {
+            --text-color: #ffffff;
+            --bg-color: #1a1a1a;
+            --overlay-color: rgba(0, 0, 0, 0.5);
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .top-left {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+        }
+
+        .bottom-left {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+        }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .top-left .time-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        #clock {
+            font-size: 9rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+        }
+
+        #moon-phase {
+            width: 120px;
+            height: 120px;
+            margin-left: 48px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        #moon-phase svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        #moon-phase img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        #date {
+            font-size: 3.5rem;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+        }
+        
+        .current-weather {
+            display: flex;
+            align-items: center;
+        }
+
+        .current-weather .icon {
+            width: 150px;
+            height: 150px;
+            margin-right: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .current-weather .icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .current-weather .details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .current-weather .pop {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #87ceeb;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+        }
+
+        .current-weather .temp {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+            line-height: 1;
+        }
+
+        .current-weather .extra-info {
+            font-size: 1.5rem;
+            margin-top: 5px;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .current-weather .description {
+            font-size: 2.2rem;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+        }
+
+        .forecast {
+            display: flex;
+            gap: 10px;
+        }
+
+        .forecast-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: transparent;
+        }
+
+        .forecast-item .time {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .forecast-item .icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        
+        .forecast-item .temp-range {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .forecast-item .pop {
+            font-size: 1.2rem;
+            font-weight: normal;
+            color: #87ceeb;
+        }
+
+        /* Responsive design for smaller screens */
+        @media (orientation: portrait), (max-width: 768px) {
+            body, html {
+                height: 100%;
+                overflow: hidden;
+            }
+            .container {
+                padding: 20px;
+                height: 100%;
+                display: block;
+                position: relative;
+            }
+            .top-left {
+                position: absolute;
+                top: 30px;
+                left: 20px;
+                text-align: left;
+                width: auto;
+            }
+            .bottom-left {
+                position: absolute;
+                bottom: 30px;
+                left: 20px;
+                text-align: left;
+                width: auto;
+                margin-bottom: 0;
+            }
+            .bottom-right {
+                position: absolute;
+                bottom: 30px;
+                right: 20px;
+                text-align: right;
+                width: auto;
+                margin-bottom: 0;
+            }
+            
+            #clock { font-size: 18vw; line-height: 1; }
+            #moon-phase { width: 22vw; height: 22vw; max-width: 96px; max-height: 96px; margin-left: 6vw; }
+            #date { font-size: 6vw; margin-top: 5px; }
+
+            .current-weather {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .current-weather .icon { 
+                width: 25vw; 
+                height: 25vw; 
+                max-width: 120px; 
+                max-height: 120px;
+                margin-right: 0; 
+                margin-bottom: 5px; 
+            }
+            .current-weather .pop { font-size: 8vw; line-height: 1.2; font-weight: bold; color: #87ceeb; }
+            .current-weather .temp { font-size: 8vw; }
+            .current-weather .extra-info {
+                font-size: 3vw;
+                flex-direction: column;
+                gap: 5px;
+            }
+            .current-weather .description { font-size: 3.5vw; margin-top: 5px; }
+            
+            .forecast {
+                flex-direction: column;
+                gap: 5px;
+                width: auto;
+                align-items: flex-end;
+            }
+            .forecast-item {
+                flex-direction: row;
+                justify-content: flex-end;
+                align-items: center;
+                width: auto;
+                padding: 2px 0;
+                border-bottom: none;
+                gap: 8px;
+                background: none;
+            }
+
+            .forecast-item .time {
+                font-size: 3.5vw;
+                margin-bottom: 0;
+                width: 20vw;
+                text-align: right;
+            }
+            .forecast-item .icon {
+                width: 7vw;
+                height: 7vw;
+                max-width: 32px;
+                max-height: 32px;
+                margin-bottom: 0;
+            }
+            .forecast-item .temp-range {
+                font-size: 3.5vw;
+                width: auto;
+                text-align: right;
+            }
+             .forecast-item .pop {
+                font-size: 3.5vw;
+                width: 8vw;
+                text-align: right;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-left">
+            <div class="time-row">
+                <div id="clock"></div>
+                <div id="moon-phase"></div>
+            </div>
+            <div id="date"></div>
+        </div>
+
+        <div class="bottom-left">
+            <div id="current-weather" class="current-weather">
+                <!-- Current weather will be injected here -->
+            </div>
+        </div>
+
+        <div class="bottom-right">
+            <div id="forecast" class="forecast">
+                <!-- Forecast will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Weather Icon SVGs (JMA 3-digit code style, simple stroke) ---
+        const S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" overflow="hidden"';
+        // sunny と同じデザインの太陽（複合アイコン用に scale で配置）
+        const sunPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        const sunTL = '<g transform="scale(0.5)">'+sunPath+'</g>';
+        const sunBR = '<g transform="translate(12,12) scale(0.5)">'+sunPath+'</g>';
+        // 右下要素は viewBox 内に収めるため scale と translate を控えめに
+        const cloudBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
+        const cloudTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
+        const rainBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 15-2 3"/><path d="m8 14-2 3"/><path d="m16 14-2 3"/></g>';
+        const snowmanBR = '<circle cx="16" cy="13" r="2.6"/><circle cx="16" cy="19.5" r="3.2"/>';
+        const snowmanTL = '<circle cx="7" cy="7" r="2.6"/><circle cx="7" cy="13.5" r="3.2"/>';
+        const rainTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 15-2 3"/><path d="m8 14-2 3"/><path d="m16 14-2 3"/></g>';
+        const thunderBR = '<path d="M18 2 L10 11 L14 11 L6 23"/>';
+        const snowman = '<circle cx="12" cy="7" r="3"/><circle cx="12" cy="15" r="4"/>';
+        const ICONS = {
+            sunny: '<svg '+S+'>'+sunPath+'</svg>',
+            sunnyCloud: '<svg '+S+'>'+sunTL+cloudBR+'</svg>',
+            sunnyRain: '<svg '+S+'>'+sunTL+rainBR+'</svg>',
+            sunnySnow: '<svg '+S+'>'+sunTL+snowmanBR+'</svg>',
+            cloudy: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+            cloudySun: '<svg '+S+'>'+cloudTL+sunBR+'</svg>',
+            cloudyRain: '<svg '+S+'>'+cloudTL+rainBR+'</svg>',
+            cloudySnow: '<svg '+S+'>'+cloudTL+snowmanBR+'</svg>',
+            fog: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="6" y1="17" x2="18" y2="17"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
+            rain: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 15-2 3"/><path d="m8 14-2 3"/><path d="m16 14-2 3"/></svg>',
+            rainSun: '<svg '+S+'>'+rainTL+sunBR+'</svg>',
+            rainShower: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m10 14-1.5 2.5"/><path d="m14 15-1.5 2.5"/><path d="m18 14-1.5 2.5"/><path d="m7 17-1 2"/></svg>',
+            rainSnow: '<svg '+S+'>'+rainTL+snowmanBR+'</svg>',
+            rainStorm: '<svg '+S+'>'+rainTL+thunderBR+'</svg>',
+            rainClear: '<svg '+S+'>'+rainTL+sunBR+'</svg>',
+            rainCloud: '<svg '+S+'>'+rainTL+cloudBR+'</svg>',
+            snow: '<svg '+S+'>'+snowman+'</svg>',
+            snowSun: '<svg '+S+'>'+snowmanTL+sunBR+'</svg>',
+            snowShower: '<svg '+S+'>'+snowmanTL+cloudBR+'</svg>',
+            snowRain: '<svg '+S+'>'+snowmanTL+rainBR+'</svg>',
+            snowStorm: '<svg '+S+'>'+snowmanTL+thunderBR+'</svg>',
+            snowClear: '<svg '+S+'>'+snowmanTL+sunBR+'</svg>',
+            snowCloud: '<svg '+S+'>'+snowmanTL+cloudBR+'</svg>',
+            thunder: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="M17 1 L8 11 L13 11 L4 23" stroke-width="2.5"/></svg>'
+        };
+
+        // JMA 3-digit weather code -> icon key (101, 308, etc. full mapping)
+        const CODE_TO_ICON = {
+            100:'sunny', 101:'sunnyCloud', 102:'sunnyRain', 103:'sunnyRain', 104:'sunnySnow', 105:'sunnySnow', 106:'sunnyRain', 107:'sunnyRain', 108:'sunnyRain',
+            110:'sunnyCloud', 111:'sunnyCloud', 112:'sunnyRain', 113:'sunnyRain', 114:'sunnyRain', 115:'sunnySnow', 116:'sunnySnow', 117:'sunnySnow', 118:'sunnyRain', 119:'sunnyRain',
+            120:'sunnyRain', 121:'sunnyRain', 122:'sunnyRain', 123:'sunny', 124:'sunny', 125:'sunnyRain', 126:'sunnyRain', 127:'sunnyRain', 128:'sunnyRain', 129:'sunnyRain',
+            130:'sunny', 131:'sunny', 132:'sunnyCloud', 140:'sunnyRain', 160:'sunnySnow', 170:'sunnySnow', 181:'sunnySnow',
+            200:'cloudy', 201:'cloudySun', 202:'cloudyRain', 203:'cloudyRain', 204:'cloudySnow', 205:'cloudySnow', 206:'cloudyRain', 207:'cloudyRain', 208:'cloudyRain', 209:'fog',
+            210:'cloudySun', 211:'cloudySun', 212:'cloudyRain', 213:'cloudyRain', 214:'cloudyRain', 215:'cloudySnow', 216:'cloudySnow', 217:'cloudySnow', 218:'cloudyRain', 219:'cloudyRain',
+            220:'cloudyRain', 221:'cloudyRain', 222:'cloudyRain', 223:'cloudySun', 224:'cloudyRain', 225:'cloudyRain', 226:'cloudyRain', 227:'cloudyRain', 228:'cloudySnow', 229:'cloudySnow', 230:'cloudySnow', 231:'fog',
+            240:'cloudyRain', 250:'cloudySnow', 260:'cloudySnow', 270:'cloudySnow', 281:'cloudySnow',
+            300:'rain', 301:'rainSun', 302:'rainShower', 303:'rainSnow', 304:'rain', 306:'rain', 307:'rainStorm', 308:'rainStorm', 309:'rainSnow',
+            311:'rainClear', 313:'rainCloud', 314:'rainSnow', 315:'rainSnow', 316:'rainClear', 317:'rainCloud', 320:'rainClear', 321:'rainCloud', 322:'rainSnow', 323:'rainClear', 324:'rainClear', 325:'rainClear', 326:'rainSnow', 327:'rainSnow', 328:'rain', 329:'rainSnow',
+            340:'rain', 350:'thunder', 361:'snowClear', 371:'snowCloud',
+            400:'snow', 401:'snowSun', 402:'snowShower', 403:'snowRain', 405:'snow', 406:'snowStorm', 407:'snowStorm', 409:'snowRain',
+            411:'snowClear', 413:'snowCloud', 414:'snowRain', 420:'snowClear', 421:'snowCloud', 422:'snowRain', 423:'snowRain', 424:'snowRain', 425:'snow', 426:'snow', 427:'snow', 450:'snow'
+        };
+
+        function getIcon(code) {
+            code = parseInt(code, 10);
+            const key = CODE_TO_ICON[code];
+            if (key && ICONS[key]) return ICONS[key];
+            if (code >= 100 && code < 200) return ICONS.sunnyCloud;
+            if (code >= 200 && code < 300) return ICONS.cloudy;
+            if (code >= 300 && code < 400) return ICONS.rain;
+            if (code >= 400) return ICONS.snow;
+            return ICONS.cloudy;
+        }
+
+        // --- Moon Phase (base: 2000-01-06 18:14 UTC new moon) ---
+        const SYNODIC_DAYS = 29.530588853;
+        const MOON_NEW_UTC = Date.UTC(2000, 0, 6, 18, 14, 0, 0);
+
+        function getMoonAge(date) {
+            const t = (date.getTime() - MOON_NEW_UTC) / (1000 * 60 * 60 * 24);
+            let age = t % SYNODIC_DAYS;
+            if (age < 0) age += SYNODIC_DAYS;
+            return age;
+        }
+
+        function getMoonPhaseIndex(moonAge) {
+            // 8分割の境界を丸めにして、新月判定が長く続きすぎないようにする
+            const phase = Math.round((moonAge / SYNODIC_DAYS) * 8);
+            return ((phase % 8) + 8) % 8;
+        }
+
+        const MOON_PHASE_SVGS = [
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 A30,50 0 0 0 50,0 Z" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 L50,0 Z" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 A30,50 0 0 1 50,0 Z" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 A30,50 0 0 0 50,0 Z" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 L50,0 Z" fill="#ffffff"/></svg>',
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 A30,50 0 0 1 50,0 Z" fill="#ffffff"/></svg>'
+        ];
+
+        // --- Clock and Date ---
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ja-JP', { hour: 'numeric', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('ja-JP', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            document.getElementById('clock').textContent = timeString;
+            document.getElementById('date').textContent = dateString;
+
+            const moonAge = getMoonAge(now);
+            const phaseIndex = getMoonPhaseIndex(moonAge);
+            const moonEl = document.getElementById('moon-phase');
+            if (moonEl) {
+                moonEl.innerHTML = MOON_PHASE_SVGS[phaseIndex] || MOON_PHASE_SVGS[0];
+            }
+        }
+
+
+        // --- Wind Direction ---
+        const WIND_DIRECTIONS = [
+            '静穏', '北北東', '北東', '東北東', '東', '東南東', '南東', '南南東',
+            '南', '南南西', '南西', '西南西', '西', '西北西', '北西', '北北西', '北'
+        ];
+        function getWindDirection(code) {
+            code = parseInt(code, 10);
+            if (code >= 0 && code < WIND_DIRECTIONS.length) return WIND_DIRECTIONS[code];
+            return '--';
+        }
+
+        // --- Weather Data Fetch and Render ---
+        async function fetchAndRenderWeather() {
+            try {
+                // Fetch both weather forecast and AMeDAS data
+                const forecastPromise = fetch('130000.json').then(res => res.json());
+                const amedasPromise = fetch('44132.json').then(res => res.json()).catch(e => {
+                    console.warn('Failed to fetch AMeDAS data:', e);
+                    return { data: {} };
+                });
+
+                const [forecastData, amedasData] = await Promise.all([forecastPromise, amedasPromise]);
+                
+                if (!forecastData || !forecastData[0]) return;
+
+                // --- AMeDAS Data (Current) ---
+                const amedas = amedasData.data || {};
+                const temp = (amedas.temp && amedas.temp[0] !== undefined) ? amedas.temp[0] : '--';
+                const humidity = (amedas.humidity && amedas.humidity[0] !== undefined) ? amedas.humidity[0] : '--';
+                const windSpeed = (amedas.wind && amedas.wind[0] !== undefined) ? amedas.wind[0] : '--';
+                const windDirCode = (amedas.windDirection && amedas.windDirection[0] !== undefined) ? amedas.windDirection[0] : -1;
+                const windDir = getWindDirection(windDirCode);
+
+                // --- Data Sources ---
+                const shortTerm = forecastData[0];
+                const weekly = forecastData[1];
+
+                // Tokyo Areas (Short-Term)
+                const stWeatherArea = shortTerm.timeSeries[0].areas.find(a => a.area.code === '130010');
+                const stPopArea = shortTerm.timeSeries[1].areas.find(a => a.area.code === '130010');
+                const stTempArea = shortTerm.timeSeries[2].areas.find(a => a.area.code === '44132') || shortTerm.timeSeries[2].areas[0];
+
+                // --- 1. Render Current/Today Weather (Left Bottom) ---
+                if (stWeatherArea) {
+                    const todayCode = stWeatherArea.weatherCodes[0];
+                    const todayText = stWeatherArea.weathers[0];
+                    
+                    const currentWeatherEl = document.getElementById('current-weather');
+                    currentWeatherEl.innerHTML = `
+                        <div class="icon">${getIcon(todayCode)}</div>
+                        <div class="details">
+                            <div class="temp">${temp}℃</div>
+                            <div class="extra-info">
+                                <span>湿度: ${humidity}%</span>
+                                <span>風速: ${windDir} ${windSpeed}m/s</span>
+                            </div>
+                            <div class="description">${todayText}</div>
+                        </div>
+                    `;
+                }
+
+                // --- 2. Render 7-Day Forecast (Right Bottom) ---
+                if (!weekly) return;
+                const wkWeatherSeries = weekly.timeSeries[0];
+                const wkTempSeries = weekly.timeSeries[1];
+                const wkWeatherArea = wkWeatherSeries.areas.find(a => a.area.code === '130010');
+                const wkTempArea = wkTempSeries.areas.find(a => a.area.code === '44132') || wkTempSeries.areas[0];
+                
+                if (!wkWeatherArea || !wkTempArea) return;
+
+                const forecastEl = document.getElementById('forecast');
+                forecastEl.innerHTML = ''; 
+
+                const daysCount = Math.min(wkWeatherSeries.timeDefines.length, 7);
+                
+                for (let i = 0; i < daysCount; i++) {
+                    const timeStr = wkWeatherSeries.timeDefines[i];
+                    const timeObj = new Date(timeStr);
+                    
+                    let code = wkWeatherArea.weatherCodes[i];
+                    let pop = wkWeatherArea.pops[i];
+                    let minTemp = wkTempArea.tempsMin[i];
+                    let maxTemp = wkTempArea.tempsMax[i];
+
+                    // --- Fix "Tomorrow" (Index 0) data from Short-Term if empty ---
+                    // JMA Weekly data sometimes has empty values for the first day (Tomorrow)
+                    if (i === 0 && (pop === '' || maxTemp === '')) {
+                        // Get Tomorrow's Code from Short-Term
+                        code = stWeatherArea.weatherCodes[1] || code;
+                        
+                        // Get Tomorrow's Max/Min from Short-Term
+                        // Typically Index 2 = Tomorrow Min, Index 3 = Tomorrow Max in stTempArea
+                        if (stTempArea.temps.length >= 4) {
+                            minTemp = stTempArea.temps[2] || minTemp;
+                            maxTemp = stTempArea.temps[3] || maxTemp;
+                        }
+                        
+                        // Get Tomorrow's Max POP from Short-Term 6-hour slots
+                        if (stPopArea) {
+                             // Tomorrow typically starts around index 4 in 6-hour slots (if reported at 11:00)
+                             // We find slots matching Tomorrow's date
+                             const tomorrowStr = timeObj.toISOString().split('T')[0];
+                             const tomorrowPops = [];
+                             shortTerm.timeSeries[1].timeDefines.forEach((t, idx) => {
+                                 if (t.startsWith(tomorrowStr)) {
+                                     tomorrowPops.push(parseInt(stPopArea.pops[idx]));
+                                 }
+                             });
+                             if (tomorrowPops.length > 0) {
+                                 pop = Math.max(...tomorrowPops).toString();
+                             }
+                        }
+                    }
+
+                    // Defaults
+                    if (minTemp === '') minTemp = '-';
+                    if (maxTemp === '') maxTemp = '-';
+                    if (pop === '') pop = '--';
+
+                    // Format Date
+                    const month = timeObj.getMonth() + 1;
+                    const date = timeObj.getDate();
+                    const day = timeObj.toLocaleDateString('ja-JP', { weekday: 'short' });
+                    const dateLabel = `${month}/${date}(${day})`;
+
+                    const forecastItemEl = document.createElement('div');
+                    forecastItemEl.className = 'forecast-item';
+                    
+                    forecastItemEl.innerHTML = `
+                        <div class="time">${dateLabel}</div>
+                        <div class="icon">${getIcon(code)}</div>
+                        <div class="temp-range">${maxTemp}℃ / ${minTemp}℃</div>
+                        <div class="pop">${pop}%</div>
+                    `;
+                    forecastEl.appendChild(forecastItemEl);
+                }
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+            }
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000); 
+            fetchAndRenderWeather();
+            setInterval(fetchAndRenderWeather, 600000); 
+        });
+    </script>
+
+</body>
+</html>
