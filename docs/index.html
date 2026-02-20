@@ -304,6 +304,15 @@
                 text-align: right;
             }
         }
+
+        .fetched-at {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -328,6 +337,7 @@
                 <!-- Forecast will be injected here -->
             </div>
         </div>
+        <div id="fetched-at" class="fetched-at"></div>
     </div>
 
     <script>
@@ -470,6 +480,11 @@
 
                 const [forecastData, amedasData] = await Promise.all([forecastPromise, amedasPromise]);
                 
+                // Update fetched_at
+                if (amedasData && amedasData.source && amedasData.source.fetched_at) {
+                    document.getElementById('fetched-at').textContent = amedasData.source.fetched_at;
+                }
+
                 if (!forecastData || !forecastData[0]) return;
 
                 // --- AMeDAS Data (Current) ---
