@@ -536,10 +536,15 @@
                 forecastEl.innerHTML = ''; 
 
                 const daysCount = Math.min(wkWeatherSeries.timeDefines.length, 7);
+                const todayStr = new Date().toLocaleDateString('ja-JP');
                 
                 for (let i = 0; i < daysCount; i++) {
                     const timeStr = wkWeatherSeries.timeDefines[i];
                     const timeObj = new Date(timeStr);
+
+                    if (timeObj.toLocaleDateString('ja-JP') === todayStr) {
+                        continue;
+                    }
                     
                     let code = wkWeatherArea.weatherCodes[i];
                     let pop = wkWeatherArea.pops[i];
@@ -593,7 +598,7 @@
                     forecastItemEl.innerHTML = `
                         <div class="time">${dateLabel}</div>
                         <div class="icon">${getIcon(code)}</div>
-                        <div class="temp-range">${maxTemp}℃ / ${minTemp}℃</div>
+                        <div class="temp-range"><span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${maxTemp}</span>℃ / <span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${minTemp}</span>℃</div>
                         <div class="pop">${pop}%</div>
                     `;
                     forecastEl.appendChild(forecastItemEl);
