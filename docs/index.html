@@ -82,13 +82,6 @@
             height: 120px;
             margin-left: 48px;
             flex-shrink: 0;
-            border-radius: 50%;
-            overflow: hidden;
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
         }
 
         #moon-phase svg {
@@ -326,7 +319,7 @@
         <div class="top-left">
             <div class="time-row">
                 <div id="clock"></div>
-                <div id="moon-phase"></div>
+                <div id="moon-phase"><svg id="moon-phase-svg"></svg></div>
             </div>
             <div id="date"></div>
         </div>
@@ -428,21 +421,183 @@
         }
 
         function getMoonPhaseIndex(moonAge) {
-            // 8分割の境界を丸めにして、新月判定が長く続きすぎないようにする
-            const phase = Math.round((moonAge / SYNODIC_DAYS) * 8);
-            return ((phase % 8) + 8) % 8;
+            // 16分割の境界を丸めにする
+            const phase = Math.round((moonAge / SYNODIC_DAYS) * 16);
+            return ((phase % 16) + 16) % 16 + 1;
         }
 
-        const MOON_PHASE_SVGS = [
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 A30,50 0 0 0 50,0 Z" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 L50,0 Z" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 1 50,100 A30,50 0 0 1 50,0 Z" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 A30,50 0 0 0 50,0 Z" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 L50,0 Z" fill="#ffffff"/></svg>',
-            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="rgba(255,255,255,0.15)"/><path d="M50,0 A50,50 0 0 0 50,100 A30,50 0 0 1 50,0 Z" fill="#ffffff"/></svg>'
-        ];
+        // --- MoonPhasesSVG Lib ---
+        (function (global) {
+          "use strict";
+
+          const SVG_NS = "http://www.w3.org/2000/svg";
+
+          function createSvgElement(tagName) {
+            return document.createElementNS(SVG_NS, tagName);
+          }
+
+          function createLitPathD(cx, cy, r, p) {
+            if (p <= 0 || p >= 1) {
+              return "";
+            }
+
+            if (Math.abs(p - 0.5) < 1e-9) {
+              return "";
+            }
+
+            const steps = 72;
+            const gamma = 2 * Math.PI * p;
+            const c = Math.cos(gamma);
+            const waxing = p < 0.5;
+
+            const outer = [];
+            const terminator = [];
+
+            for (let i = 0; i <= steps; i += 1) {
+              const t = i / steps;
+              const yLocal = -r + 2 * r * t;
+              const edge = Math.sqrt(Math.max(0, r * r - yLocal * yLocal));
+              outer.push([cx + (waxing ? edge : -edge), cy + yLocal]);
+            }
+
+            for (let i = steps; i >= 0; i -= 1) {
+              const t = i / steps;
+              const yLocal = -r + 2 * r * t;
+              const edge = Math.sqrt(Math.max(0, r * r - yLocal * yLocal));
+              const xTerm = (waxing ? c : -c) * edge;
+              terminator.push([cx + xTerm, cy + yLocal]);
+            }
+
+            const points = outer.concat(terminator);
+            const first = points[0];
+            let d = "M " + first[0].toFixed(3) + " " + first[1].toFixed(3);
+            for (let i = 1; i < points.length; i += 1) {
+              d += " L " + points[i][0].toFixed(3) + " " + points[i][1].toFixed(3);
+            }
+            d += " Z";
+            return d;
+          }
+
+          function resolveTarget(target) {
+            if (typeof target === "string") {
+              return document.querySelector(target);
+            }
+            return target;
+          }
+
+          function render(target, options) {
+            const svg = resolveTarget(target);
+            if (!svg) {
+              throw new Error("MoonPhasesSVG: target SVG element was not found.");
+            }
+
+            const opts = Object.assign(
+              {
+                total: 16,
+                radius: 28,
+                startX: 45,
+                gap: 72,
+                centerY: 62,
+                lightColor: "#ffffff",
+                shadowColor: "#3a3a3a",
+                outlineColor: "#4b4b4b",
+                labelColor: "#b8c3d8",
+                showLabels: true,
+                labelStart: 1,
+                // 1始まりで指定。nullなら全段階を描画
+                phaseIndex: null
+              },
+              options || {}
+            );
+
+            const total = Math.max(1, Math.floor(opts.total));
+            const r = opts.radius;
+            const startX = opts.startX;
+            const gap = opts.gap;
+            const cy = opts.centerY;
+            const hasSpecificPhase = Number.isFinite(opts.phaseIndex);
+            const requestedPhaseIndex = hasSpecificPhase
+              ? Math.min(total, Math.max(1, Math.floor(opts.phaseIndex)))
+              : null;
+            const renderCount = hasSpecificPhase ? 1 : total;
+            const width = 2 * startX + (renderCount - 1) * gap;
+            const height = opts.showLabels ? cy + r + 40 : cy + r + 12;
+
+            svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+            svg.setAttribute("xmlns", SVG_NS);
+            svg.setAttribute("aria-label", total + "段階の月の満ち欠け");
+
+            while (svg.firstChild) {
+              svg.removeChild(svg.firstChild);
+            }
+
+            for (let renderI = 0; renderI < renderCount; renderI += 1) {
+              const phaseZeroBased = hasSpecificPhase ? requestedPhaseIndex - 1 : renderI;
+              const p = phaseZeroBased / total;
+              const cx = startX + renderI * gap;
+              const g = createSvgElement("g");
+
+              const base = createSvgElement("circle");
+              base.setAttribute("cx", cx);
+              base.setAttribute("cy", cy);
+              base.setAttribute("r", r);
+              base.setAttribute("fill", opts.shadowColor);
+
+              const isFullMoon = Math.abs(p - 0.5) < 1e-9;
+              const litPathD = createLitPathD(cx, cy, r, p);
+              let litNode = null;
+
+              if (isFullMoon) {
+                const litCircle = createSvgElement("circle");
+                litCircle.setAttribute("cx", cx);
+                litCircle.setAttribute("cy", cy);
+                litCircle.setAttribute("r", r);
+                litCircle.setAttribute("fill", opts.lightColor);
+                litNode = litCircle;
+              } else if (litPathD) {
+                const litPath = createSvgElement("path");
+                litPath.setAttribute("d", litPathD);
+                litPath.setAttribute("fill", opts.lightColor);
+                litNode = litPath;
+              }
+
+              const outline = createSvgElement("circle");
+              outline.setAttribute("cx", cx);
+              outline.setAttribute("cy", cy);
+              outline.setAttribute("r", r);
+              outline.setAttribute("fill", "none");
+              outline.setAttribute("stroke", opts.outlineColor);
+              outline.setAttribute("stroke-width", "1");
+
+              g.appendChild(base);
+              if (litNode) {
+                g.appendChild(litNode);
+              }
+              g.appendChild(outline);
+
+              if (opts.showLabels) {
+                const label = createSvgElement("text");
+                label.setAttribute("x", cx);
+                label.setAttribute("y", String(cy + r + 32));
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-size", "11");
+                label.setAttribute("fill", opts.labelColor);
+                label.textContent = hasSpecificPhase
+                  ? String(requestedPhaseIndex)
+                  : String(opts.labelStart + renderI);
+                g.appendChild(label);
+              }
+
+              svg.appendChild(g);
+            }
+
+            return svg;
+          }
+
+          global.MoonPhasesSVG = {
+            render: render
+          };
+        })(window);
 
         // --- Clock and Date ---
         function updateClock() {
@@ -455,9 +610,19 @@
 
             const moonAge = getMoonAge(now);
             const phaseIndex = getMoonPhaseIndex(moonAge);
-            const moonEl = document.getElementById('moon-phase');
-            if (moonEl) {
-                moonEl.innerHTML = MOON_PHASE_SVGS[phaseIndex] || MOON_PHASE_SVGS[0];
+            const moonSvg = document.getElementById('moon-phase-svg');
+            if (moonSvg) {
+                MoonPhasesSVG.render(moonSvg, {
+                    total: 16,
+                    phaseIndex: phaseIndex,
+                    radius: 50,
+                    startX: 50,
+                    centerY: 50,
+                    lightColor: "#ffffff",
+                    shadowColor: "#3a3a3a",
+                    outlineColor: "transparent",
+                    showLabels: false
+                });
             }
         }
 
