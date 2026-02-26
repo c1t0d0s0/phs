@@ -1,0 +1,43 @@
+name: Fetch daily Tide JSON (python)
+
+on:
+  schedule:
+    - cron: "10 15 * * *"   # 毎日 15:10 UTC（JST 00:10）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run script to generate JSON
+        run: |
+          python scripts/tide.py > docs/tide.json
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+
+          git add docs/tide.json
+          git commit -m "Update tide.json ($(date -u +'%Y-%m-%dT%H:%M:%SZ'))"
+          git push
