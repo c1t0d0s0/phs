@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import requests
-from bs4 import BeautifulSoup
 import json
 import datetime
 import math
