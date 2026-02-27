@@ -76,29 +76,25 @@ def get_tide_data():
 
 
 def get_tide_name(moon_age):
-    """月齢から潮の名前を返す"""
-    if 28.0 <= moon_age or moon_age <= 1.5:
-        return "大潮"
-    elif 1.6 <= moon_age <= 5.8:
-        return "中潮"
-    elif 5.9 <= moon_age <= 8.9:
-        return "小潮"
-    elif 9.0 <= moon_age <= 10.4:
-        return "長潮"
-    elif 10.5 <= moon_age <= 11.9:
-        return "若潮"
-    elif 12.0 <= moon_age <= 16.3:
-        return "大潮"
-    elif 16.4 <= moon_age <= 20.6:
-        return "中潮"
-    elif 20.7 <= moon_age <= 23.7:
-        return "小潮"
-    elif 23.8 <= moon_age <= 25.2:
-        return "長潮"
-    elif 25.3 <= moon_age <= 26.7:
-        return "若潮"
-    else: # 26.8 - 27.9
-        return "中潮"
+    """
+    月齢から潮の名前を返す（四捨五入基準）
+    表の定義に基づき、0.5単位の境界線は四捨五入で処理
+    """
+    # 月齢は29.5日で一周するため、30以上の数値などを丸める処理
+    age = round(moon_age % 29.5)
+
+    if age in [0, 1, 2, 14, 15, 16]:
+        return "大潮" # 新月または満月。 潮の干満差が最も大きい時期。
+    elif age in [3, 4, 5, 11, 12, 13, 17, 18, 19, 25, 26, 27, 28, 29]:
+        return "中潮" # 新月や満月に向けて再び干満差が大きくなる時期。
+    elif age in [6, 7, 8, 20, 21, 22]:
+        return "小潮" # 下弦の月や上弦の月。干満差が小さくなる時期。
+    elif age in [9, 23]:
+        return "長潮" # 干満差が最も小さく、潮の動きが緩慢な時期。
+    elif age in [10, 24]:
+        return "若潮" # 長潮の翌日。潮が再び動き出す（若返る）時期
+    else:
+        return "中潮" # 例外処理（基本的にはここには来ない）
 
 
 def get_moon_age():
