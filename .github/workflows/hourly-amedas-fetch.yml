@@ -1,4 +1,4 @@
-name: Fetch hourly JSON (python)
+name: Fetch hourly AMeDAS JSON (python)
 
 on:
   schedule:
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f scripts/requirements-amedas.txt ]; then pip install -r scripts/requirements-amedas.txt; fi
 
       - name: Run script to generate JSON
         run: |

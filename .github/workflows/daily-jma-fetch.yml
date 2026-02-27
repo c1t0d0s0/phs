@@ -1,4 +1,4 @@
-name: Fetch daily JSON (curl)
+name: Fetch daily JMA JSON (curl)
 
 on:
   schedule:

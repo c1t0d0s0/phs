@@ -8,6 +8,8 @@ import math
 from astral import LocationInfo
 from astral.sun import sun
 
+JST = datetime.timezone(datetime.timedelta(hours=9))
+
 # --- 設定 ---
 # 東京都港区の緯度経度
 LATITUDE = 35.6586
@@ -17,7 +19,7 @@ LONGITUDE = 139.7454
 def get_tide_data():
     """tide736.netのAPIから潮汐情報を取得する"""
     try:
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(JST)
         year = now.year
         month = now.month
         day = now.day
@@ -105,8 +107,8 @@ def get_moon_age():
     # 朔望月(新月から次の新月まで)を約29.53日とする
     # 特定の既知の新月からの経過日数を計算する
     # 2000年1月6日を基準とする
-    known_new_moon = datetime.datetime(2000, 1, 6, 18, 14)
-    now = datetime.datetime.now()
+    known_new_moon = datetime.datetime(2000, 1, 6, 18, 14, tzinfo=datetime.timezone.utc)
+    now = datetime.datetime.now(JST)
     days_since_new_moon = (now - known_new_moon).total_seconds() / (24 * 3600)
     lunation_period = 29.53058867
     moon_age = days_since_new_moon % lunation_period
@@ -135,7 +137,7 @@ def main():
     sunrise_time = sunrise.strftime('%H:%M') if sunrise else "N/A"
     sunset_time = sunset.strftime('%H:%M') if sunset else "N/A"
 
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(JST)
 
     # 最終的なデータ構造
     data = {
