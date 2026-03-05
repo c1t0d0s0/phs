@@ -195,6 +195,12 @@
             color: #87ceeb;
         }
 
+        .forecast-item .temp-pop-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         /* Responsive design for smaller screens */
         @media (orientation: portrait), (max-width: 768px) {
             body, html {
@@ -291,6 +297,11 @@
                 max-height: 32px;
                 margin-bottom: 0;
             }
+            .forecast-item .temp-pop-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
             .forecast-item .temp-range {
                 font-size: 3.5vw;
                 width: auto;
@@ -298,7 +309,7 @@
             }
              .forecast-item .pop {
                 font-size: 3.5vw;
-                width: 8vw;
+                width: auto;
                 text-align: right;
             }
         }
@@ -768,8 +779,10 @@
                     forecastItemEl.innerHTML = `
                         <div class="time">${dateLabel}</div>
                         <div class="icon">${getIcon(code)}</div>
-                        <div class="temp-range"><span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${maxTemp}</span>℃ / <span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${minTemp}</span>℃</div>
-                        <div class="pop">降水確率 ${pop}%</div>
+                        <div class="temp-pop-wrapper">
+                            <div class="temp-range"><span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${maxTemp}</span>℃ / <span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${minTemp}</span>℃</div>
+                            <div class="pop">降水確率 ${pop}%</div>
+                        </div>
                     `;
                     forecastEl.appendChild(forecastItemEl);
                 }
