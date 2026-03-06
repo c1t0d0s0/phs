@@ -152,7 +152,7 @@
         }
         
         .current-weather .description {
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             text-shadow: 1px 1px 2px var(--overlay-color);
         }
 
@@ -688,7 +688,7 @@
                 // --- 1. Render Current/Today Weather (Left Bottom) ---
                 if (stWeatherArea) {
                     const todayCode = stWeatherArea.weatherCodes[0];
-                    const todayText = stWeatherArea.weathers[0];
+                    const todayText = stWeatherArea.weathers[0].replace(/　/g, ' ');
                     
                     const currentWeatherEl = document.getElementById('current-weather');
                     currentWeatherEl.innerHTML = `
