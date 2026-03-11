@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "title": "テスト1",
+      "description": "これはテストです\n改行も正しく表示してほしい",
+      "content": "<p>これはテストです<br>改行も正しく表示してほしい</p>",
+      "duration": 15,
+      "image": "",
+      "file": ""
+    },
+    {
+      "title": "テスト2",
+      "description": "",
+      "content": "<img src=\"https://drive.google.com/uc?export=view&id=1w-yiosAkbDj5GZhnfI4QNKf44w0uNA29\" style=\"max-width:100%;\"><br><p></p>",
+      "duration": 30,
+      "image": "assets/sky.jpg",
+      "file": "sky.jpg"
+    },
+    {
+      "title": "テスト3",
+      "description": "テキストと画像の両方があるパターン\nこの表示も綺麗に表示したい",
+      "content": "<img src=\"https://drive.google.com/uc?export=view&id=1yzr4X1cMepUaaU5hpautYRjV5DXrbZnO\" style=\"max-width:100%;\"><br><p>テキストと画像の両方があるパターン<br>この表示も綺麗に表示したい</p>",
+      "duration": 15,
+      "image": "assets/etihad.jpg",
+      "file": "etihad.jpg"
+    }
+  ]
+}

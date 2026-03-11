@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast (JMA)</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <script src="config.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async :src="'https://www.googletagmanager.com/gtag/js?id=' + GTM_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', GTM_ID);
+    </script>
+    <style>
+        :root {
+            --text-color: #ffffff;
+            --bg-color: #1a1a1a;
+            --overlay-color: rgba(0, 0, 0, 0.5);
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .top-left {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+        }
+
+        .bottom-left {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+        }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+        }
+
+        .top-right {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 860px;
+            aspect-ratio: 16 / 16;
+            box-sizing: border-box;
+            overflow: hidden;
+            padding: 16px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            line-height: 1.4;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .top-right .rss-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .top-right .rss-image {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .top-right .rss-content {
+            font-size: 1rem;
+            overflow: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .top-right .rss-content p {
+            margin: 0 0 0.5em 0;
+        }
+
+        .top-right .rss-content img {
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            border-radius: 6px;
+        }
+
+        #rss-feed:not([data-loaded]) {
+            display: none;
+        }
+
+        /* RSS feed visible: hide forecast, rss-feed uses full height */
+        body.rss-feed-visible .bottom-right {
+            display: none;
+        }
+        body.rss-feed-visible .top-right {
+            top: 40px;
+            bottom: 40px;
+            height: auto;
+            aspect-ratio: unset;
+        }
+
+        .top-left .time-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        #clock {
+            font-size: 9rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+        }
+
+        #moon-phase {
+            width: 120px;
+            height: 120px;
+            margin-left: 48px;
+            flex-shrink: 0;
+        }
+
+        #moon-phase svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        #moon-phase img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        #date {
+            font-size: 3.5rem;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+        }
+        
+        .current-weather {
+            display: flex;
+            align-items: center;
+        }
+
+        .current-weather .icon {
+            width: 150px;
+            height: 150px;
+            margin-right: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .current-weather .icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .current-weather .details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .current-weather .pop {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #87ceeb;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+        }
+
+        .current-weather .temp {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px var(--overlay-color);
+            line-height: 1;
+        }
+
+        .current-weather .extra-info {
+            font-size: 1.5rem;
+            margin-top: 5px;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .current-weather .description {
+            font-size: 1.8rem;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            max-width: 18em;
+        }
+
+        .forecast {
+            display: flex;
+            gap: 10px;
+        }
+
+        .forecast-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: transparent;
+        }
+
+        .forecast-item .time {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .forecast-item .icon {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+        
+        .forecast-item .temp-range {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 2px;
+        }
+
+        .forecast-item .pop {
+            font-size: 1.2rem;
+            font-weight: normal;
+            color: #87ceeb;
+        }
+
+        .forecast-item .temp-pop-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Responsive design for smaller screens */
+        @media (orientation: portrait), (max-width: 768px) {
+            body, html {
+                height: 100%;
+                overflow: hidden;
+            }
+            .container {
+                padding: 20px;
+                height: 100%;
+                display: block;
+                position: relative;
+            }
+            .top-left {
+                position: absolute;
+                top: 30px;
+                left: 20px;
+                text-align: left;
+                width: auto;
+            }
+            .bottom-left {
+                position: absolute;
+                bottom: 30px;
+                left: 20px;
+                text-align: left;
+                width: auto;
+                margin-bottom: 0;
+            }
+            .bottom-right {
+                position: absolute;
+                bottom: 30px;
+                right: 20px;
+                text-align: right;
+                width: auto;
+                margin-bottom: 0;
+            }
+            
+            #clock { font-size: 18vw; line-height: 1; }
+            #moon-phase { width: 22vw; height: 22vw; max-width: 96px; max-height: 96px; margin-left: 6vw; }
+            #date { font-size: 6vw; margin-top: 5px; }
+
+            .current-weather {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .current-weather .icon { 
+                width: 30vw; 
+                height: 30vw; 
+                max-width: 200px; 
+                max-height: 200px;
+                margin-right: 0; 
+                margin-bottom: 5px; 
+            }
+            .current-weather .pop { font-size: 8vw; line-height: 1.2; font-weight: bold; color: #87ceeb; }
+            .current-weather .temp { font-size: 8vw; }
+            .current-weather .extra-info {
+                font-size: 3vw;
+                flex-direction: column;
+                gap: 5px;
+            }
+            .current-weather .description { 
+                font-size: 3.5vw; 
+                margin-top: 5px; 
+                max-width: 11em;
+                line-height: 1.4;
+            }
+            
+            .forecast {
+                flex-direction: column;
+                gap: 5px;
+                width: auto;
+                align-items: flex-end;
+            }
+            .forecast-item {
+                flex-direction: row;
+                justify-content: flex-end;
+                align-items: center;
+                width: auto;
+                padding: 2px 0;
+                border-bottom: none;
+                gap: 8px;
+                background: none;
+            }
+
+            .forecast-item .time {
+                font-size: 3.5vw;
+                margin-bottom: 0;
+                width: 20vw;
+                text-align: right;
+            }
+            .forecast-item .icon {
+                width: 14vw;
+                height: 14vw;
+                max-width: 30px;
+                max-height: 30px;
+                margin-bottom: 0;
+            }
+            .forecast-item .temp-pop-wrapper {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            .forecast-item .temp-range {
+                font-size: 3.5vw;
+                width: auto;
+                text-align: right;
+            }
+             .forecast-item .pop {
+                font-size: 2.8vw;
+                width: auto;
+                text-align: right;
+            }
+
+            /* Portrait + RSS: hide current-weather and forecast, rss-feed below date only */
+            body.rss-feed-visible .bottom-left {
+                display: none;
+            }
+            body.rss-feed-visible .bottom-right {
+                display: none;
+            }
+            body.rss-feed-visible .top-right {
+                top: 22vh;
+                left: 20px;
+                right: 20px;
+                bottom: 20px;
+                width: calc(100vw - 40px);
+                height: auto;
+                aspect-ratio: unset;
+                max-height: none;
+                font-size: 2.8vw;
+                padding: 10px;
+            }
+
+            .top-right {
+                top: 22vh;
+                left: 20px;
+                right: 20px;
+                width: calc(100vw - 40px);
+                max-width: none;
+                aspect-ratio: 16 / 16;
+                max-height: none;
+                font-size: 2.8vw;
+                padding: 10px;
+            }
+            .top-right .rss-title {
+                font-size: 3vw;
+            }
+            .top-right .rss-content {
+                font-size: 2.5vw;
+            }
+            .top-right .rss-image {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                object-fit: contain;
+                max-height: none;
+            }
+        }
+
+        .fetched-at {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.5rem;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-left">
+            <div class="time-row">
+                <div id="clock"></div>
+                <div id="moon-phase"><svg id="moon-phase-svg"></svg></div>
+            </div>
+            <div id="date"></div>
+        </div>
+
+        <div id="rss-feed" class="top-right" aria-live="polite">
+            <!-- RSS items injected by JS -->
+        </div>
+
+        <div class="bottom-left">
+            <div id="current-weather" class="current-weather">
+                <!-- Current weather will be injected here -->
+            </div>
+        </div>
+
+        <div class="bottom-right">
+            <div id="forecast" class="forecast">
+                <!-- Forecast will be injected here -->
+            </div>
+        </div>
+        <div id="fetched-at" class="fetched-at"></div>
+    </div>
+
+    <script>
+        // --- Weather Icon SVGs (JMA 3-digit code style, simple stroke) ---
+        const S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" overflow="hidden"';
+        // sunny と同じデザインの太陽（複合アイコン用に scale で配置）
+        const sunPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        const sunTL = '<g transform="scale(0.5)">'+sunPath+'</g>';
+        const sunBR = '<g transform="translate(12,12) scale(0.5)">'+sunPath+'</g>';
+        // 右下要素は viewBox 内に収めるため scale と translate を控えめに
+        const cloudBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
+        const cloudTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
+        const rainBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></g>';
+        const snowmanBR = '<circle cx="16" cy="13" r="2.6"/><circle cx="16" cy="19.5" r="3.2"/>';
+        const snowmanTL = '<circle cx="7" cy="7" r="2.6"/><circle cx="7" cy="13.5" r="3.2"/>';
+        const rainTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></g>';
+        const thunderBR = '<path d="M18 2 L10 11 L14 11 L6 23"/>';
+        const snowman = '<circle cx="12" cy="7" r="3"/><circle cx="12" cy="15" r="4"/>';
+        const ICONS = {
+            sunny: '<svg '+S+'>'+sunPath+'</svg>',
+            sunnyCloud: '<svg '+S+'>'+sunTL+cloudBR+'</svg>',
+            sunnyRain: '<svg '+S+'>'+sunTL+rainBR+'</svg>',
+            sunnySnow: '<svg '+S+'>'+sunTL+snowmanBR+'</svg>',
+            cloudy: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+            cloudySun: '<svg '+S+'>'+cloudTL+sunBR+'</svg>',
+            cloudyRain: '<svg '+S+'>'+cloudTL+rainBR+'</svg>',
+            cloudySnow: '<svg '+S+'>'+cloudTL+snowmanBR+'</svg>',
+            fog: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="6" y1="17" x2="18" y2="17"/><line x1="8" y1="11" x2="16" y2="11"/></svg>',
+            rain: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></svg>',
+            rainSun: '<svg '+S+'>'+rainTL+sunBR+'</svg>',
+            rainShower: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></svg>',
+            rainSnow: '<svg '+S+'>'+rainTL+snowmanBR+'</svg>',
+            rainStorm: '<svg '+S+'>'+rainTL+thunderBR+'</svg>',
+            rainClear: '<svg '+S+'>'+rainTL+sunBR+'</svg>',
+            rainCloud: '<svg '+S+'>'+rainTL+cloudBR+'</svg>',
+            snow: '<svg '+S+'>'+snowman+'</svg>',
+            snowSun: '<svg '+S+'>'+snowmanTL+sunBR+'</svg>',
+            snowShower: '<svg '+S+'>'+snowmanTL+cloudBR+'</svg>',
+            snowRain: '<svg '+S+'>'+snowmanTL+rainBR+'</svg>',
+            snowStorm: '<svg '+S+'>'+snowmanTL+thunderBR+'</svg>',
+            snowClear: '<svg '+S+'>'+snowmanTL+sunBR+'</svg>',
+            snowCloud: '<svg '+S+'>'+snowmanTL+cloudBR+'</svg>',
+            thunder: '<svg '+S+'><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="M17 1 L8 11 L13 11 L4 23" stroke-width="2.5"/></svg>'
+        };
+
+        // JMA 3-digit weather code -> icon key (101, 308, etc. full mapping)
+        const CODE_TO_ICON = {
+            100:'sunny', 101:'sunnyCloud', 102:'sunnyRain', 103:'sunnyRain', 104:'sunnySnow', 105:'sunnySnow', 106:'sunnyRain', 107:'sunnyRain', 108:'sunnyRain',
+            110:'sunnyCloud', 111:'sunnyCloud', 112:'sunnyRain', 113:'sunnyRain', 114:'sunnyRain', 115:'sunnySnow', 116:'sunnySnow', 117:'sunnySnow', 118:'sunnyRain', 119:'sunnyRain',
+            120:'sunnyRain', 121:'sunnyRain', 122:'sunnyRain', 123:'sunny', 124:'sunny', 125:'sunnyRain', 126:'sunnyRain', 127:'sunnyRain', 128:'sunnyRain', 129:'sunnyRain',
+            130:'sunny', 131:'sunny', 132:'sunnyCloud', 140:'sunnyRain', 160:'sunnySnow', 170:'sunnySnow', 181:'sunnySnow',
+            200:'cloudy', 201:'cloudySun', 202:'cloudyRain', 203:'cloudyRain', 204:'cloudySnow', 205:'cloudySnow', 206:'cloudyRain', 207:'cloudyRain', 208:'cloudyRain', 209:'fog',
+            210:'cloudySun', 211:'cloudySun', 212:'cloudyRain', 213:'cloudyRain', 214:'cloudyRain', 215:'cloudySnow', 216:'cloudySnow', 217:'cloudySnow', 218:'cloudyRain', 219:'cloudyRain',
+            220:'cloudyRain', 221:'cloudyRain', 222:'cloudyRain', 223:'cloudySun', 224:'cloudyRain', 225:'cloudyRain', 226:'cloudyRain', 227:'cloudyRain', 228:'cloudySnow', 229:'cloudySnow', 230:'cloudySnow', 231:'fog',
+            240:'cloudyRain', 250:'cloudySnow', 260:'cloudySnow', 270:'cloudySnow', 281:'cloudySnow',
+            300:'rain', 301:'rainSun', 302:'rainShower', 303:'rainSnow', 304:'rain', 306:'rain', 307:'rainStorm', 308:'rainStorm', 309:'rainSnow',
+            311:'rainClear', 313:'rainCloud', 314:'rainSnow', 315:'rainSnow', 316:'rainClear', 317:'rainCloud', 320:'rainClear', 321:'rainCloud', 322:'rainSnow', 323:'rainClear', 324:'rainClear', 325:'rainClear', 326:'rainSnow', 327:'rainSnow', 328:'rain', 329:'rainSnow',
+            340:'rain', 350:'thunder', 361:'snowClear', 371:'snowCloud',
+            400:'snow', 401:'snowSun', 402:'snowShower', 403:'snowRain', 405:'snow', 406:'snowStorm', 407:'snowStorm', 409:'snowRain',
+            411:'snowClear', 413:'snowCloud', 414:'snowRain', 420:'snowClear', 421:'snowCloud', 422:'snowRain', 423:'snowRain', 424:'snowRain', 425:'snow', 426:'snow', 427:'snow', 450:'snow'
+        };
+
+        function getIcon(code) {
+            code = parseInt(code, 10);
+            const key = CODE_TO_ICON[code];
+            if (key && ICONS[key]) return ICONS[key];
+            if (code >= 100 && code < 200) return ICONS.sunnyCloud;
+            if (code >= 200 && code < 300) return ICONS.cloudy;
+            if (code >= 300 && code < 400) return ICONS.rain;
+            if (code >= 400) return ICONS.snow;
+            return ICONS.cloudy;
+        }
+
+        // --- Moon Phase (base: 2000-01-06 18:14 UTC new moon) ---
+        const SYNODIC_DAYS = 29.530588853;
+        const MOON_NEW_UTC = Date.UTC(2000, 0, 6, 18, 14, 0, 0);
+
+        function getMoonAge(date) {
+            const t = (date.getTime() - MOON_NEW_UTC) / (1000 * 60 * 60 * 24);
+            let age = t % SYNODIC_DAYS;
+            if (age < 0) age += SYNODIC_DAYS;
+            return age;
+        }
+
+        function getMoonPhaseIndex(moonAge) {
+            // 16分割の境界を丸めにする
+            const phase = Math.round((moonAge / SYNODIC_DAYS) * 16);
+            return ((phase % 16) + 16) % 16 + 1;
+        }
+
+        // --- MoonPhasesSVG Lib ---
+        (function (global) {
+          "use strict";
+
+          const SVG_NS = "http://www.w3.org/2000/svg";
+
+          function createSvgElement(tagName) {
+            return document.createElementNS(SVG_NS, tagName);
+          }
+
+          function createLitPathD(cx, cy, r, p) {
+            if (p <= 0 || p >= 1) {
+              return "";
+            }
+
+            if (Math.abs(p - 0.5) < 1e-9) {
+              return "";
+            }
+
+            const steps = 72;
+            const gamma = 2 * Math.PI * p;
+            const c = Math.cos(gamma);
+            const waxing = p < 0.5;
+
+            const outer = [];
+            const terminator = [];
+
+            for (let i = 0; i <= steps; i += 1) {
+              const t = i / steps;
+              const yLocal = -r + 2 * r * t;
+              const edge = Math.sqrt(Math.max(0, r * r - yLocal * yLocal));
+              outer.push([cx + (waxing ? edge : -edge), cy + yLocal]);
+            }
+
+            for (let i = steps; i >= 0; i -= 1) {
+              const t = i / steps;
+              const yLocal = -r + 2 * r * t;
+              const edge = Math.sqrt(Math.max(0, r * r - yLocal * yLocal));
+              const xTerm = (waxing ? c : -c) * edge;
+              terminator.push([cx + xTerm, cy + yLocal]);
+            }
+
+            const points = outer.concat(terminator);
+            const first = points[0];
+            let d = "M " + first[0].toFixed(3) + " " + first[1].toFixed(3);
+            for (let i = 1; i < points.length; i += 1) {
+              d += " L " + points[i][0].toFixed(3) + " " + points[i][1].toFixed(3);
+            }
+            d += " Z";
+            return d;
+          }
+
+          function resolveTarget(target) {
+            if (typeof target === "string") {
+              return document.querySelector(target);
+            }
+            return target;
+          }
+
+          function render(target, options) {
+            const svg = resolveTarget(target);
+            if (!svg) {
+              throw new Error("MoonPhasesSVG: target SVG element was not found.");
+            }
+
+            const opts = Object.assign(
+              {
+                total: 16,
+                radius: 28,
+                startX: 45,
+                gap: 72,
+                centerY: 62,
+                lightColor: "#ffffff",
+                shadowColor: "#3a3a3a",
+                outlineColor: "#4b4b4b",
+                labelColor: "#b8c3d8",
+                showLabels: true,
+                labelStart: 1,
+                // 1始まりで指定。nullなら全段階を描画
+                phaseIndex: null
+              },
+              options || {}
+            );
+
+            const total = Math.max(1, Math.floor(opts.total));
+            const r = opts.radius;
+            const startX = opts.startX;
+            const gap = opts.gap;
+            const cy = opts.centerY;
+            const hasSpecificPhase = Number.isFinite(opts.phaseIndex);
+            const requestedPhaseIndex = hasSpecificPhase
+              ? Math.min(total, Math.max(1, Math.floor(opts.phaseIndex)))
+              : null;
+            const renderCount = hasSpecificPhase ? 1 : total;
+            const width = 2 * startX + (renderCount - 1) * gap;
+            const height = opts.showLabels ? cy + r + 40 : cy + r + 12;
+
+            svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+            svg.setAttribute("xmlns", SVG_NS);
+            svg.setAttribute("aria-label", total + "段階の月の満ち欠け");
+
+            while (svg.firstChild) {
+              svg.removeChild(svg.firstChild);
+            }
+
+            for (let renderI = 0; renderI < renderCount; renderI += 1) {
+              const phaseZeroBased = hasSpecificPhase ? requestedPhaseIndex - 1 : renderI;
+              const p = phaseZeroBased / total;
+              const cx = startX + renderI * gap;
+              const g = createSvgElement("g");
+
+              const base = createSvgElement("circle");
+              base.setAttribute("cx", cx);
+              base.setAttribute("cy", cy);
+              base.setAttribute("r", r);
+              base.setAttribute("fill", opts.shadowColor);
+
+              const isFullMoon = Math.abs(p - 0.5) < 1e-9;
+              const litPathD = createLitPathD(cx, cy, r, p);
+              let litNode = null;
+
+              if (isFullMoon) {
+                const litCircle = createSvgElement("circle");
+                litCircle.setAttribute("cx", cx);
+                litCircle.setAttribute("cy", cy);
+                litCircle.setAttribute("r", r);
+                litCircle.setAttribute("fill", opts.lightColor);
+                litNode = litCircle;
+              } else if (litPathD) {
+                const litPath = createSvgElement("path");
+                litPath.setAttribute("d", litPathD);
+                litPath.setAttribute("fill", opts.lightColor);
+                litNode = litPath;
+              }
+
+              const outline = createSvgElement("circle");
+              outline.setAttribute("cx", cx);
+              outline.setAttribute("cy", cy);
+              outline.setAttribute("r", r);
+              outline.setAttribute("fill", "none");
+              outline.setAttribute("stroke", opts.outlineColor);
+              outline.setAttribute("stroke-width", "1");
+
+              g.appendChild(base);
+              if (litNode) {
+                g.appendChild(litNode);
+              }
+              g.appendChild(outline);
+
+              if (opts.showLabels) {
+                const label = createSvgElement("text");
+                label.setAttribute("x", cx);
+                label.setAttribute("y", String(cy + r + 32));
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-size", "11");
+                label.setAttribute("fill", opts.labelColor);
+                label.textContent = hasSpecificPhase
+                  ? String(requestedPhaseIndex)
+                  : String(opts.labelStart + renderI);
+                g.appendChild(label);
+              }
+
+              svg.appendChild(g);
+            }
+
+            return svg;
+          }
+
+          global.MoonPhasesSVG = {
+            render: render
+          };
+        })(window);
+
+        // --- Clock and Date ---
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ja-JP', { hour: 'numeric', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('ja-JP', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            document.getElementById('clock').textContent = timeString;
+            document.getElementById('date').textContent = dateString;
+
+            const moonAge = getMoonAge(now);
+            const phaseIndex = getMoonPhaseIndex(moonAge);
+            const moonSvg = document.getElementById('moon-phase-svg');
+            if (moonSvg) {
+                MoonPhasesSVG.render(moonSvg, {
+                    total: 16,
+                    phaseIndex: phaseIndex,
+                    radius: 50,
+                    startX: 50,
+                    centerY: 50,
+                    lightColor: "#ffffff",
+                    shadowColor: "#3a3a3a",
+                    outlineColor: "transparent",
+                    showLabels: false
+                });
+            }
+        }
+
+
+        // --- Wind Direction ---
+        const WIND_DIRECTIONS = [
+            '静穏', '北北東', '北東', '東北東', '東', '東南東', '南東', '南南東',
+            '南', '南南西', '南西', '西南西', '西', '西北西', '北西', '北北西', '北'
+        ];
+        function getWindDirection(code) {
+            code = parseInt(code, 10);
+            if (code >= 0 && code < WIND_DIRECTIONS.length) return WIND_DIRECTIONS[code];
+            return '--';
+        }
+
+        // --- Weather Data Fetch and Render ---
+        async function fetchAndRenderWeather() {
+            try {
+                // Fetch both weather forecast and AMeDAS data
+                const forecastPromise = fetch('130000.json').then(res => res.json());
+                const amedasPromise = fetch('44132.json').then(res => res.json()).catch(e => {
+                    console.warn('Failed to fetch AMeDAS data:', e);
+                    return { data: {} };
+                });
+
+                const [forecastData, amedasData] = await Promise.all([forecastPromise, amedasPromise]);
+                
+                // Update fetched_at
+                if (amedasData && amedasData.source && amedasData.source.fetched_at) {
+                    document.getElementById('fetched-at').textContent = amedasData.source.fetched_at;
+                }
+
+                if (!forecastData || !forecastData[0]) return;
+
+                // --- AMeDAS Data (Current) ---
+                const amedas = amedasData.data || {};
+                const temp = (amedas.temp && amedas.temp[0] !== undefined) ? amedas.temp[0] : '--';
+                const humidity = (amedas.humidity && amedas.humidity[0] !== undefined) ? amedas.humidity[0] : '--';
+                const windSpeed = (amedas.wind && amedas.wind[0] !== undefined) ? amedas.wind[0] : '--';
+                const windDirCode = (amedas.windDirection && amedas.windDirection[0] !== undefined) ? amedas.windDirection[0] : -1;
+                const windDir = getWindDirection(windDirCode);
+
+                // --- Data Sources ---
+                const shortTerm = forecastData[0];
+                const weekly = forecastData[1];
+
+                // Tokyo Areas (Short-Term)
+                const stWeatherArea = shortTerm.timeSeries[0].areas.find(a => a.area.code === '130010');
+                const stPopArea = shortTerm.timeSeries[1].areas.find(a => a.area.code === '130010');
+                const stTempArea = shortTerm.timeSeries[2].areas.find(a => a.area.code === '44132') || shortTerm.timeSeries[2].areas[0];
+
+                // --- 1. Render Current/Today Weather (Left Bottom) ---
+                if (stWeatherArea) {
+                    const todayCode = stWeatherArea.weatherCodes[0];
+                    const todayText = stWeatherArea.weathers[0].replace(/　/g, ' ');
+                    
+                    const currentWeatherEl = document.getElementById('current-weather');
+                    currentWeatherEl.innerHTML = `
+                        <div class="icon">${getIcon(todayCode)}</div>
+                        <div class="details">
+                            <div class="temp">${temp}℃</div>
+                            <div class="extra-info">
+                                <span>湿度: ${humidity}%</span>
+                                <span>風速: ${windDir} ${windSpeed}m/s</span>
+                            </div>
+                            <div class="description">${todayText}</div>
+                        </div>
+                    `;
+                }
+
+                // --- 2. Render 7-Day Forecast (Right Bottom) ---
+                if (!weekly) return;
+                const wkWeatherSeries = weekly.timeSeries[0];
+                const wkTempSeries = weekly.timeSeries[1];
+                const wkWeatherArea = wkWeatherSeries.areas.find(a => a.area.code === '130010');
+                const wkTempArea = wkTempSeries.areas.find(a => a.area.code === '44132') || wkTempSeries.areas[0];
+                
+                if (!wkWeatherArea || !wkTempArea) return;
+
+                const forecastEl = document.getElementById('forecast');
+                forecastEl.innerHTML = ''; 
+
+                const daysCount = Math.min(wkWeatherSeries.timeDefines.length, 7);
+                const todayStr = new Date().toLocaleDateString('ja-JP');
+                
+                for (let i = 0; i < daysCount; i++) {
+                    const timeStr = wkWeatherSeries.timeDefines[i];
+                    const timeObj = new Date(timeStr);
+
+                    if (timeObj.toLocaleDateString('ja-JP') === todayStr) {
+                        continue;
+                    }
+                    
+                    let code = wkWeatherArea.weatherCodes[i];
+                    let pop = wkWeatherArea.pops[i];
+                    let minTemp = wkTempArea.tempsMin[i];
+                    let maxTemp = wkTempArea.tempsMax[i];
+
+                    // --- Fix "Tomorrow" (Index 0) data from Short-Term if empty ---
+                    // JMA Weekly data sometimes has empty values for the first day (Tomorrow)
+                    if (i === 0 && (pop === '' || maxTemp === '')) {
+                        // Get Tomorrow's Code from Short-Term
+                        code = stWeatherArea.weatherCodes[1] || code;
+                        
+                        // Get Tomorrow's Max/Min from Short-Term
+                        // Typically Index 2 = Tomorrow Min, Index 3 = Tomorrow Max in stTempArea
+                        if (stTempArea.temps.length >= 4) {
+                            minTemp = stTempArea.temps[2] || minTemp;
+                            maxTemp = stTempArea.temps[3] || maxTemp;
+                        }
+                        
+                        // Get Tomorrow's Max POP from Short-Term 6-hour slots
+                        if (stPopArea) {
+                             // Tomorrow typically starts around index 4 in 6-hour slots (if reported at 11:00)
+                             // We find slots matching Tomorrow's date
+                             const tomorrowStr = timeObj.toISOString().split('T')[0];
+                             const tomorrowPops = [];
+                             shortTerm.timeSeries[1].timeDefines.forEach((t, idx) => {
+                                 if (t.startsWith(tomorrowStr)) {
+                                     tomorrowPops.push(parseInt(stPopArea.pops[idx]));
+                                 }
+                             });
+                             if (tomorrowPops.length > 0) {
+                                 pop = Math.max(...tomorrowPops).toString();
+                             }
+                        }
+                    }
+
+                    // Defaults
+                    if (minTemp === '') minTemp = '-';
+                    if (maxTemp === '') maxTemp = '-';
+                    if (pop === '') pop = '--';
+
+                    // Format Date
+                    const month = timeObj.getMonth() + 1;
+                    const date = timeObj.getDate();
+                    const day = timeObj.toLocaleDateString('ja-JP', { weekday: 'short' });
+                    const dateLabel = `${month}/${date}(${day})`;
+
+                    const forecastItemEl = document.createElement('div');
+                    forecastItemEl.className = 'forecast-item';
+                    
+                    forecastItemEl.innerHTML = `
+                        <div class="time">${dateLabel}</div>
+                        <div class="icon">${getIcon(code)}</div>
+                        <div class="temp-pop-wrapper">
+                            <div class="temp-range"><span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${maxTemp}</span>℃ / <span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${minTemp}</span>℃</div>
+                            <div class="pop">降水確率 ${pop}%</div>
+                        </div>
+                    `;
+                    forecastEl.appendChild(forecastItemEl);
+                }
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+            }
+        }
+
+        // --- RSS Feed (お知らせ) ---
+        let rssItems = [];
+        let rssIndex = 0;
+        let rssTimer = null;
+
+        function renderRssItem(item) {
+            const el = document.getElementById('rss-feed');
+            if (!el) return;
+            const parts = [];
+            if (item.title) {
+                parts.push('<div class="rss-title">' + escapeHtml(item.title) + '</div>');
+            }
+            if (item.file) {
+                parts.push('<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">');
+            }
+            if (item.description) {
+                parts.push('<div class="rss-content">' + escapeHtml(item.description).replace(/\n/g, '<br>') + '</div>');
+            }
+            el.innerHTML = parts.length ? parts.join('') : '';
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function advanceRss() {
+            if (rssItems.length === 0) return;
+            const item = rssItems[rssIndex];
+            renderRssItem(item);
+            const durationMs = (item.duration || 15) * 1000;
+            rssTimer = setTimeout(() => {
+                rssIndex = (rssIndex + 1) % rssItems.length;
+                advanceRss();
+            }, durationMs);
+        }
+
+        async function fetchAndStartRss() {
+            const el = document.getElementById('rss-feed');
+            try {
+                const res = await fetch('rss.json');
+                if (!res.ok) {
+                    if (el) el.style.display = 'none';
+                    if (el) el.setAttribute('data-loaded', 'true');
+                    document.body.classList.remove('rss-feed-visible');
+                    return;
+                }
+                const data = await res.json();
+                const items = data.items || [];
+                if (items.length === 0) {
+                    if (el) el.style.display = 'none';
+                    if (el) el.setAttribute('data-loaded', 'true');
+                    document.body.classList.remove('rss-feed-visible');
+                    return;
+                }
+                if (el) el.style.display = '';
+                if (el) el.setAttribute('data-loaded', 'true');
+                document.body.classList.add('rss-feed-visible');
+                if (rssTimer) clearTimeout(rssTimer);
+                rssItems = items;
+                rssIndex = 0;
+                advanceRss();
+            } catch (e) {
+                console.warn('RSS fetch failed:', e);
+                if (el) el.style.display = 'none';
+                if (el) el.setAttribute('data-loaded', 'true');
+                document.body.classList.remove('rss-feed-visible');
+            }
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000); 
+            fetchAndRenderWeather();
+            setInterval(fetchAndRenderWeather, 600000); 
+            fetchAndStartRss();
+        });
+    </script>
+
+</body>
+</html>
