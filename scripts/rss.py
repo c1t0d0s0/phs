@@ -93,7 +93,7 @@ def parse_item(item, out_dir=None, image_index=None):
         "description": description,
         "content": content,
         "duration": duration,
-        "image": image,
+        "image": image_url,
         "file": file_name,
     }
 
