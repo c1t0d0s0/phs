@@ -12,7 +12,7 @@ flowchart LR
 
   subgraph Google[Google]
     drive((Google Drive))
-    apps[Apps Script]
+    apps[RSS Feed Generator<br>Apps Script]
   end
 
   subgraph JMA[JMA]
