@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from html import unescape
 
 import requests
+from PIL import Image
 
 RSS_URL = "https://script.google.com/macros/s/AKfycbxKygdEFZRz5BFzFOP52e-HkgLry-B6qrtNEcZvMXkF8CRzHGbpWCbQ6n5y6VD7dHB8/exec"
 CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
@@ -47,6 +48,25 @@ def download_image(url, images_dir, save_filename, image_index=0, timeout=30):
             for chunk in r.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
+
+        # 横幅が 860px を超える場合はアスペクト比を保って 860px にリサイズ（JPEG/PNG 対応）
+        try:
+            with Image.open(path) as img:
+                w, h = img.size
+                if w > 860:
+                    ratio = 860 / w
+                    new_size = (860, int(round(h * ratio)))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+                    ext = os.path.splitext(path)[1].lower()
+                    if ext == ".png":
+                        img.save(path, optimize=True)
+                    else:
+                        if img.mode in ("RGBA", "P"):
+                            img = img.convert("RGB")
+                        img.save(path, "JPEG", quality=95, optimize=True)
+        except Exception:
+            pass
+
         return path
     except Exception:
         return None
