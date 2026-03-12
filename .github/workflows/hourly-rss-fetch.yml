@@ -1,6 +1,10 @@
 name: Fetch hourly RSS and deploy Pages
 
 on:
+  workflow_run:
+    workflows: ["pages build and deployment"]
+    types: [completed]
+    branches: [main]   # デフォルトブランチに合わせる
   schedule:
     - cron: "22 * * * *"   # 毎時 22分 UTC（JST 毎時+9h）
   workflow_dispatch:
