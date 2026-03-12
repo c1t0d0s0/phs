@@ -1,40 +1,43 @@
 ```mermaid
-architecture-beta
-    group github(logos:github-icon)[GitHub]
-    service repository(disk)[Repository] in github
-    service actions-deploy(logos:github-actions)[Pages Build and Deployment] in github
-    service actions-jma(logos:github-actions)[daily JMA] in github
-    service actions-amedas(logos:github-actions)[hourly AMeDAS] in github
-    service actions-rss(logos:github-actions)[hourly RSS] in github
-    service actions-tide(logos:github-actions)[daily Tide] in github
-    service pages(internet)[Pages] in github
-    repository:R --> L:actions-deploy
-    actions-deploy:B --> T:pages
+flowchart LR
+  subgraph GitHub[GitHub]
+    repository[Repository]
+    actions_deploy[Pages Build and Deployment]
+    actions_forecast[daily Forecast]
+    actions_amedas[hourly AMeDAS]
+    actions_rss[hourly RSS]
+    actions_tide[daily Tide]
+    pages[Pages]
+  end
 
+  subgraph Google[Google]
+    drive[Drive]
+    apps[Apps Script]
+  end
 
-    group google(logos:google-icon)[Google]
-    service drive(logos:google-drive)[Drive] in google
-    service apps(cloud)[RSS Feed] in google
-    drive:B --> T:apps
-    drive:B --> T:actions-rss
-    apps:L --> R:actions-rss
-    actions-rss:L --> R:pages
+  subgraph JMA[JMA]
+    forecast_api[Forecast API]
+    amedas_api[AMeDAS API]
+  end
 
+  subgraph Tide[Tide]
+    tide_api[Tide API]
+  end
 
-    group jma(internet)[JMA]
-    service jma-api(server)[JMA API] in jma
-    jma-api:R --> L:actions-jma
-    actions-jma:R --> L:repository
+  repository --> actions_deploy
+  actions_deploy -->|Deploy| pages
 
+  drive -->|Spread Sheet| apps
+  drive -->|Image Files| actions_rss
+  apps -->|RSS Feed| actions_rss
+  actions_rss -->|Deploy| pages
 
-    group amedas(internet)[AMeDAS]
-    service amedas-api(server)[AMeDAS API] in amedas
-    amedas-api:R --> L:actions-amedas
-    actions-amedas:R --> B:repository
+  forecast_api --> actions_forecast
+  actions_forecast -->|130000.json| repository
 
+  amedas_api --> actions_amedas
+  actions_amedas -->|44132.json| repository
 
-    group tide(internet)[Tide]
-    service tide-api(server)[Tide API] in tide
-    tide-api:R --> L:actions-tide
-    actions-tide:R --> T:repository
+  tide_api --> actions_tide
+  actions_tide -->|tide.json| repository
 ```
