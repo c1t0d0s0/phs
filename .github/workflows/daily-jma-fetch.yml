@@ -5,6 +5,9 @@ on:
     - cron: "10 21 * * *"   # 毎日 21:10 UTC（JST 06:10）
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: write
 

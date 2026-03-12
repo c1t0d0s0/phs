@@ -5,6 +5,9 @@ on:
     - cron: "22 * * * *"   # 毎時 22分 UTC（JST 毎時+9h）
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 permissions:
   contents: read
 
