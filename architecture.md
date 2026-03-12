@@ -1,7 +1,7 @@
 ```mermaid
 flowchart LR
-  subgraph GitHub[GitHub]
-    repository((Repository))
+  subgraph GitHub[**GitHub**]
+    repository[(Repository)]
     actions_deploy[Pages Build and Deployment]
     actions_forecast[daily Forecast fetch<br>GitHub Actions]
     actions_amedas[hourly AMeDAS fetch<br>GitHub Actions]
@@ -10,21 +10,21 @@ flowchart LR
     pages(GitHub Pages)
   end
 
-  subgraph Google[Google]
-    drive((Google Drive))
+  subgraph Google[**Google**]
+    drive[(Google Drive)]
     apps[RSS Feed Generator<br>Apps Script]
   end
 
-  subgraph JMA[JMA]
+  subgraph JMA[**JMA**]
     forecast_api[Forecast API]
     amedas_api[AMeDAS API]
   end
 
-  subgraph Tide[Tide]
+  subgraph Tide[**Tide**]
     tide_api[Tide API]
   end
 
-  subgraph Client[Client]
+  subgraph Client[**Client**]
     web_browser[Web Browser]
   end
 
