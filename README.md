@@ -1,75 +1,74 @@
-# 概要
+# Overview
 
-天気、アメダス、潮汐、お知らせなどの情報を定期的に取得し、サイネージ向けWebページとして表示するためのプロジェクトです。
-GitHub Actionsを利用して定期的にデータを取得・更新し、フロントエンド（`docs` ディレクトリ）用のJSONデータを自動生成します。
+This project fetches weather, AMeDAS, tide, announcements, and related data on a schedule and displays them on a signage-oriented web page. GitHub Actions is used to fetch and update data periodically and to generate JSON for the front end (`docs` directory).
 
-## 機能・データソース
+## Features & Data Sources
 
-GitHub Actionsの定期実行（cron）によって以下のデータを自動取得し、`docs/` 配下にJSONファイルとして保存します。
+The following data is fetched automatically by GitHub Actions (cron) and saved as JSON under `docs/`.
 
-1. **気象庁 天気予報データ** (`docs/130000.json`)
-   * **取得元:** 気象庁 (JMA) 天気予報API (`https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json`)
-   * **対象地域:** 東京地方（130000）
-   * **更新頻度:** 毎日 06:10 JST (21:10 UTC)
-   * **ワークフロー:** `.github/workflows/daily-jma-fetch.yml`
+1. **Japan Meteorological Agency (JMA) Forecast Data** (`docs/130000.json`)
+   * **Source:** JMA Forecast API (`https://www.jma.go.jp/bosai/forecast/data/forecast/130000.json`)
+   * **Region:** Tokyo (130000)
+   * **Update frequency:** Daily at 06:10 JST (21:10 UTC)
+   * **Workflow:** `.github/workflows/daily-jma-fetch.yml`
 
-2. **アメダス（AMeDAS）データ** (`docs/44132.json`)
-   * **取得元:** 気象庁 アメダス最新データ
-   * **対象観測所:** 観測所コード 44132（東京）
-   * **更新頻度:** 毎時 5分 (JST)
-   * **ワークフロー:** `.github/workflows/hourly-amedas-fetch.yml`
-   * **スクリプト:** `scripts/amedas.py`
+2. **AMeDAS Data** (`docs/44132.json`)
+   * **Source:** JMA AMeDAS latest data
+   * **Station:** Station code 44132 (Tokyo)
+   * **Update frequency:** Every hour at 5 minutes past (JST)
+   * **Workflow:** `.github/workflows/hourly-amedas-fetch.yml`
+   * **Script:** `scripts/amedas.py`
 
-3. **潮汐・日の出・日の入りデータ** (`docs/tide.json`)
-   * **取得元:** [tide736.net API](https://tide736.net/)（潮汐）、Pythonライブラリ `astral`（日の出・日の入り）
-   * **対象地域:** 芝浦周辺（緯度: 35.6586, 経度: 139.7454）
-   * **更新頻度:** 毎日 00:10 JST (15:10 UTC)
-   * **ワークフロー:** `.github/workflows/daily-tide-fetch.yml`
-   * **スクリプト:** `scripts/tide.py`
+3. **Tide, Sunrise & Sunset Data** (`docs/tide.json`)
+   * **Source:** [tide736.net API](https://tide736.net/) (tide), Python library `astral` (sunrise/sunset)
+   * **Location:** Shibaura area (lat: 35.6586, lon: 139.7454)
+   * **Update frequency:** Daily at 00:10 JST (15:10 UTC)
+   * **Workflow:** `.github/workflows/daily-tide-fetch.yml`
+   * **Script:** `scripts/tide.py`
 
-4. **RSSフィードのデータ** (`docs/rss.json`)
-   * **取得元:** Google Apps Scriptで設定したRSSフィード
-   * **RSSフィードのURL** scripts/rss.py内の `RSS_URL` で指定
-   * **更新頻度:** 毎時 22分 (JST)
-   * **ワークフロー:** `.github/workflows/hourly-rss-fetch.yml`
-   * **スクリプト:** `scripts/rss.py`
+4. **RSS Feed Data** (`docs/rss.json`)
+   * **Source:** RSS feed configured via Google Apps Script
+   * **RSS feed URL:** Set by `RSS_URL` in `scripts/rss.py`
+   * **Update frequency:** Every hour at 22 minutes past (JST)
+   * **Workflow:** `.github/workflows/hourly-rss-fetch.yml`
+   * **Script:** `scripts/rss.py`
 
-## ディレクトリ構成
+## Directory Structure
 
-* `docs/`: フロントエンドリソース（HTML、CSS、JS）および、自動取得されたJSONデータ。静的サイトホスティング（GitHub Pagesなど）のドキュメントルートとなります。
-  * `index.html`: メインダッシュボード画面
-  * `weather.html`: 天気予報ダッシュボード画面
-  * `tide.html`: 潮汐情報画面
-  * `*.json`: 取得済みの各種データ
-* `scripts/`: データ取得用のPythonスクリプト
-  * `amedas.py`: アメダスデータの取得・整形
-  * `tide.py`: 潮汐データおよび日の出日の入り、月齢の計算・整形
-  * `rss.py`: RSSフィードの取得
-  * `requirements-*.txt`: 各スクリプトで必要なPythonパッケージ一覧
-  * `signage.gs`: Google Apps ScriptでRSSフィードを生成するためのスクリプト (SpreadsheetApp.openById()のところでスプレッドシートのIDを指定)
+* `docs/`: Front-end resources (HTML, CSS, JS) and auto-fetched JSON. Serves as the document root for static hosting (e.g. GitHub Pages).
+  * `index.html`: Main dashboard
+  * `weather.html`: Weather forecast dashboard
+  * `tide.html`: Tide information page
+  * `*.json`: Fetched data files
+* `scripts/`: Python scripts for data fetching
+  * `amedas.py`: AMeDAS fetch and formatting
+  * `tide.py`: Tide, sunrise/sunset, and moon phase calculation and formatting
+  * `rss.py`: RSS feed fetch
+  * `requirements-*.txt`: Python package lists per script
+  * `signage.gs`: Google Apps Script for RSS feed generation (set the spreadsheet ID in `SpreadsheetApp.openById()`)
 
-## ローカルでの実行・開発
+## Local Run & Development
 
-データ取得スクリプトをローカルでテストする場合は、以下のコマンドを実行します。
+To test the data-fetch scripts locally, run:
 
 ```bash
-# アメダスデータの取得テスト
+# AMeDAS fetch test
 pip install -r scripts/requirements-amedas.txt
 python scripts/amedas.py
 
-# 潮汐データの取得テスト
+# Tide fetch test
 pip install -r scripts/requirements-tide.txt
 python scripts/tide.py
 
-# RSSフィードの取得テスト
+# RSS feed fetch test
 pip install -r scripts/requirements-rss.txt
 python scripts/rss.py docs
 ```
 
-フロントエンドの確認は、ローカルサーバーを立ち上げて `docs/` ディレクトリを表示してください。
+To preview the front end, start a local server and open the `docs/` directory:
 
 ```bash
 cd docs
 python -m http.server 8000
-# ブラウザで http://localhost:8000 にアクセス
+# Open http://localhost:8000 in your browser
 ```
