@@ -754,7 +754,11 @@
         function updateClock() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('ja-JP', { hour: 'numeric', minute: '2-digit' });
-            const dateString = now.toLocaleDateString('ja-JP', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const y = now.getFullYear();
+            const m = now.getMonth() + 1;
+            const d = now.getDate();
+            const w = now.toLocaleDateString('ja-JP', { weekday: 'short' });  // "金"
+            const dateString = `${y}年${m}月${d}日(${w})`;
             
             document.getElementById('clock').textContent = timeString;
             document.getElementById('date').textContent = dateString;
