@@ -56,79 +56,6 @@
             right: 40px;
         }
 
-        .top-right {
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            width: 860px;
-            aspect-ratio: 16 / 16;
-            box-sizing: border-box;
-            overflow: hidden;
-            padding: 16px;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            color: var(--text-color);
-            font-size: 1.1rem;
-            line-height: 1.4;
-            text-shadow: 1px 1px 2px var(--overlay-color);
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        .top-right .rss-title {
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-            flex-shrink: 0;
-        }
-
-        .top-right .rss-image {
-            width: 100%;
-            max-width: 100%;
-            height: auto;
-            max-height: 100%;
-            object-fit: contain;
-            display: block;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: rgba(0, 0, 0, 0.2);
-        }
-
-        .top-right .rss-content {
-            font-size: 1rem;
-            overflow: auto;
-            flex: 1;
-            min-height: 0;
-        }
-
-        .top-right .rss-content p {
-            margin: 0 0 0.5em 0;
-        }
-
-        .top-right .rss-content img {
-            max-width: 100%;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            border-radius: 6px;
-        }
-
-        #rss-feed:not([data-loaded]) {
-            display: none;
-        }
-
-        /* RSS feed visible: hide forecast, rss-feed uses full height */
-        body.rss-feed-visible .bottom-right {
-            display: none;
-        }
-        body.rss-feed-visible .top-right {
-            top: 40px;
-            bottom: 40px;
-            height: auto;
-            aspect-ratio: unset;
-        }
-
         .top-left .time-row {
             display: flex;
             align-items: center;
@@ -377,51 +304,6 @@
                 width: auto;
                 text-align: right;
             }
-
-            /* Portrait + RSS: hide current-weather and forecast, rss-feed below date only */
-            body.rss-feed-visible .bottom-left {
-                display: none;
-            }
-            body.rss-feed-visible .bottom-right {
-                display: none;
-            }
-            body.rss-feed-visible .top-right {
-                top: 22vh;
-                left: 20px;
-                right: 20px;
-                bottom: 20px;
-                width: calc(100vw - 40px);
-                height: auto;
-                aspect-ratio: unset;
-                max-height: none;
-                font-size: 2.8vw;
-                padding: 10px;
-            }
-
-            .top-right {
-                top: 22vh;
-                left: 20px;
-                right: 20px;
-                width: calc(100vw - 40px);
-                max-width: none;
-                aspect-ratio: 16 / 16;
-                max-height: none;
-                font-size: 2.8vw;
-                padding: 10px;
-            }
-            .top-right .rss-title {
-                font-size: 3vw;
-            }
-            .top-right .rss-content {
-                font-size: 2.5vw;
-            }
-            .top-right .rss-image {
-                width: 100%;
-                max-width: 100%;
-                height: auto;
-                object-fit: contain;
-                max-height: none;
-            }
         }
 
         .fetched-at {
@@ -443,10 +325,6 @@
                 <div id="moon-phase"><svg id="moon-phase-svg"></svg></div>
             </div>
             <div id="date"></div>
-        </div>
-
-        <div id="rss-feed" class="top-right" aria-live="polite">
-            <!-- RSS items injected by JS -->
         </div>
 
         <div class="bottom-left">
@@ -906,85 +784,12 @@
             }
         }
 
-        // --- RSS Feed (お知らせ) ---
-        let rssItems = [];
-        let rssIndex = 0;
-        let rssTimer = null;
-
-        function renderRssItem(item) {
-            const el = document.getElementById('rss-feed');
-            if (!el) return;
-            const parts = [];
-            if (item.title) {
-                parts.push('<div class="rss-title">' + escapeHtml(item.title) + '</div>');
-            }
-            if (item.file) {
-                parts.push('<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">');
-            }
-            if (item.description) {
-                parts.push('<div class="rss-content">' + escapeHtml(item.description).replace(/\n/g, '<br>') + '</div>');
-            }
-            el.innerHTML = parts.length ? parts.join('') : '';
-        }
-
-        function escapeHtml(s) {
-            const div = document.createElement('div');
-            div.textContent = s;
-            return div.innerHTML;
-        }
-
-        function advanceRss() {
-            if (rssItems.length === 0) return;
-            const item = rssItems[rssIndex];
-            renderRssItem(item);
-            const durationMs = (item.duration || 15) * 1000;
-            rssTimer = setTimeout(() => {
-                rssIndex = (rssIndex + 1) % rssItems.length;
-                advanceRss();
-            }, durationMs);
-        }
-
-        async function fetchAndStartRss() {
-            const el = document.getElementById('rss-feed');
-            try {
-                const res = await fetch('rss.json');
-                if (!res.ok) {
-                    if (el) el.style.display = 'none';
-                    if (el) el.setAttribute('data-loaded', 'true');
-                    document.body.classList.remove('rss-feed-visible');
-                    return;
-                }
-                const data = await res.json();
-                const items = data.items || [];
-                if (items.length === 0) {
-                    if (el) el.style.display = 'none';
-                    if (el) el.setAttribute('data-loaded', 'true');
-                    document.body.classList.remove('rss-feed-visible');
-                    return;
-                }
-                if (el) el.style.display = '';
-                if (el) el.setAttribute('data-loaded', 'true');
-                document.body.classList.add('rss-feed-visible');
-                if (rssTimer) clearTimeout(rssTimer);
-                rssItems = items;
-                rssIndex = 0;
-                advanceRss();
-            } catch (e) {
-                console.warn('RSS fetch failed:', e);
-                if (el) el.style.display = 'none';
-                if (el) el.setAttribute('data-loaded', 'true');
-                document.body.classList.remove('rss-feed-visible');
-            }
-        }
-
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
             setInterval(updateClock, 1000); 
             fetchAndRenderWeather();
             setInterval(fetchAndRenderWeather, 600000); 
-            fetchAndStartRss();
-            setInterval(fetchAndStartRss, 3600000);  // 1時間ごとにRSSを再読み込み
         });
     </script>
 
