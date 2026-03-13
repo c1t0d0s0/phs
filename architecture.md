@@ -19,14 +19,22 @@ flowchart LR
     forecast_api[Forecast API]
     amedas_api[AMeDAS API]
   end
+  style JMA fill:#333333, stroke-dasharray: 5 5
 
   subgraph Tide[**Tide**]
     tide_api[Tide API]
   end
+  style Tide fill:#333333, stroke-dasharray: 5 5
 
   subgraph Client[**Client**]
     web_browser[Web Browser]
   end
+  style Client fill:#331111, stroke-dasharray: 5 5
+
+  subgraph Operator[**Operator**]
+    web_browser2[Web Browser]
+  end
+  style Operator fill:#331111, stroke-dasharray: 5 5
 
   repository --> actions_deploy
   actions_deploy -->|Deploy| pages
@@ -36,14 +44,16 @@ flowchart LR
   apps -->|RSS Feed| actions_rss
   actions_rss -->|Deploy| pages
 
-  forecast_api --> actions_forecast
+  forecast_api -->|Weather Forecast| actions_forecast
   actions_forecast -->|130000.json| repository
 
-  amedas_api --> actions_amedas
+  amedas_api -->|AMeDAS Info| actions_amedas
   actions_amedas -->|44132.json| repository
 
-  tide_api --> actions_tide
+  tide_api -->|Tide Info| actions_tide
   actions_tide -->|tide.json| repository
 
   pages --> web_browser
+
+  web_browser2 -->|Edit Spread Sheet<br>Upload Image Files| drive
 ```
