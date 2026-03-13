@@ -114,6 +114,23 @@
             border-radius: 6px;
         }
 
+        .top-right .rss-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.5em 0;
+            font-size: inherit;
+        }
+        .top-right .rss-content th,
+        .top-right .rss-content td {
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 0.35em 0.6em;
+            text-align: left;
+        }
+        .top-right .rss-content th {
+            background: rgba(255, 255, 255, 0.15);
+            font-weight: bold;
+        }
+
         #rss-feed:not([data-loaded]) {
             display: none;
         }
@@ -920,7 +937,7 @@
 
         function sanitizeRssHtml(html) {
             if (typeof DOMPurify === 'undefined') return escapeHtml(html).replace(/\n/g, '<br>');
-            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div'];
+            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td'];
             var allowedAttr = ['style'];
             DOMPurify.addHook('uponSanitizeAttribute', function(node, data) {
                 if (data.attrName === 'style') {
