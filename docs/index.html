@@ -152,6 +152,13 @@
             height: auto;
             aspect-ratio: unset;
         }
+        /* 空のRSS項目時: rss-feedを非表示、右下にforecastを表示 */
+        body.rss-feed-visible.rss-blank-item .bottom-right {
+            display: block;
+        }
+        body.rss-feed-visible.rss-blank-item .top-right {
+            display: none;
+        }
 
         .top-left .time-row {
             display: flex;
@@ -990,15 +997,39 @@
             return div.innerHTML;
         }
 
+        function isBlankRssItem(item) {
+            var hasContent = (item.title || '').trim() || (item.description || '').trim() || (item.image || '').trim() || (item.file || '').trim();
+            var hasDuration = typeof item.duration === 'number' && item.duration > 0;
+            return !hasContent && hasDuration;
+        }
+
         function advanceRss() {
             if (rssItems.length === 0) return;
-            const item = rssItems[rssIndex];
-            renderRssItem(item);
-            const durationMs = (item.duration || 15) * 1000;
-            rssTimer = setTimeout(() => {
-                rssIndex = (rssIndex + 1) % rssItems.length;
-                advanceRss();
-            }, durationMs);
+            var item = rssItems[rssIndex];
+            var el = document.getElementById('rss-feed');
+            var durationMs = (item.duration || 15) * 1000;
+
+            if (isBlankRssItem(item)) {
+                document.body.classList.add('rss-blank-item');
+                if (el) {
+                    el.style.display = 'none';
+                    el.innerHTML = '';
+                }
+                rssTimer = setTimeout(function() {
+                    document.body.classList.remove('rss-blank-item');
+                    if (el) el.style.display = '';
+                    rssIndex = (rssIndex + 1) % rssItems.length;
+                    advanceRss();
+                }, durationMs);
+            } else {
+                document.body.classList.remove('rss-blank-item');
+                if (el) el.style.display = '';
+                renderRssItem(item);
+                rssTimer = setTimeout(function() {
+                    rssIndex = (rssIndex + 1) % rssItems.length;
+                    advanceRss();
+                }, durationMs);
+            }
         }
 
         async function fetchAndStartRss() {
