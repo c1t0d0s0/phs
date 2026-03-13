@@ -131,6 +131,13 @@
             font-weight: bold;
         }
 
+        .top-right .rss-content input[type="checkbox"] {
+            margin: 0 0.4em 0 0;
+            vertical-align: middle;
+            width: 1em;
+            height: 1em;
+        }
+
         #rss-feed:not([data-loaded]) {
             display: none;
         }
@@ -937,8 +944,8 @@
 
         function sanitizeRssHtml(html) {
             if (typeof DOMPurify === 'undefined') return escapeHtml(html).replace(/\n/g, '<br>');
-            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td'];
-            var allowedAttr = ['style'];
+            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'input'];
+            var allowedAttr = ['style', 'type', 'disabled', 'checked'];
             DOMPurify.addHook('uponSanitizeAttribute', function(node, data) {
                 if (data.attrName === 'style') {
                     var kept = [];
