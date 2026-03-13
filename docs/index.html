@@ -463,6 +463,8 @@
         <div id="fetched-at" class="fetched-at"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
     <script>
         // --- Weather Icon SVGs (JMA 3-digit code style, simple stroke) ---
         const S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" overflow="hidden"';
@@ -906,10 +908,36 @@
             }
         }
 
-        // --- RSS Feed (お知らせ) ---
+        // --- RSS Feed (お知らせ): Markdown + 色用HTML（リンクは許可しない） ---
         let rssItems = [];
         let rssIndex = 0;
         let rssTimer = null;
+
+        (function initMarked() {
+            if (typeof marked === 'undefined') return;
+            marked.setOptions({ breaks: true });
+        })();
+
+        function sanitizeRssHtml(html) {
+            if (typeof DOMPurify === 'undefined') return escapeHtml(html).replace(/\n/g, '<br>');
+            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div'];
+            var allowedAttr = ['style'];
+            DOMPurify.addHook('uponSanitizeAttribute', function(node, data) {
+                if (data.attrName === 'style') {
+                    var kept = [];
+                    var parts = (data.attrValue || '').split(';');
+                    for (var i = 0; i < parts.length; i++) {
+                        var part = parts[i].trim().toLowerCase();
+                        if (part.indexOf('color:') === 0 || part.indexOf('background-color:') === 0)
+                            kept.push(parts[i].trim());
+                    }
+                    data.attrValue = kept.join('; ');
+                }
+            });
+            var out = DOMPurify.sanitize(html, { ALLOWED_TAGS: allowedTags, ALLOWED_ATTR: allowedAttr });
+            DOMPurify.removeHook('uponSanitizeAttribute');
+            return out;
+        }
 
         function renderRssItem(item) {
             const el = document.getElementById('rss-feed');
@@ -922,7 +950,8 @@
                 parts.push('<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">');
             }
             if (item.description) {
-                parts.push('<div class="rss-content">' + escapeHtml(item.description).replace(/\n/g, '<br>') + '</div>');
+                var raw = (typeof marked !== 'undefined') ? marked.parse(item.description) : escapeHtml(item.description).replace(/\n/g, '<br>');
+                parts.push('<div class="rss-content">' + sanitizeRssHtml(raw) + '</div>');
             }
             el.innerHTML = parts.length ? parts.join('') : '';
         }
