@@ -3,10 +3,10 @@ flowchart LR
   subgraph GitHub[**GitHub**]
     repository[(Repository)]
     actions_deploy[Pages Build and Deployment]
-    actions_forecast[daily Forecast fetch<br>GitHub Actions]
-    actions_amedas[hourly AMeDAS fetch<br>GitHub Actions]
-    actions_rss[hourly RSS fetch<br>GitHub Actions]
-    actions_tide[daily Tide fetch<br>GitHub Actions]
+    actions_forecast[Daily Forecast fetch<br>GitHub Actions]
+    actions_amedas[Hourly AMeDAS fetch<br>GitHub Actions]
+    actions_rss[Hourly RSS fetch<br>GitHub Actions]
+    actions_tide[Daily Tide fetch<br>GitHub Actions]
     pages(GitHub Pages)
   end
 
@@ -39,7 +39,7 @@ flowchart LR
   repository --> actions_deploy
   actions_deploy -->|Deploy| pages
 
-  drive -->|Spread Sheet| apps
+  drive -->|Spreadsheet| apps
   drive -->|Image Files| actions_rss
   apps -->|RSS Feed| actions_rss
   actions_rss -->|Deploy| pages
@@ -47,13 +47,13 @@ flowchart LR
   forecast_api -->|Weather Forecast| actions_forecast
   actions_forecast -->|130000.json| repository
 
-  amedas_api -->|AMeDAS Info| actions_amedas
+  amedas_api -->|AMeDAS Data| actions_amedas
   actions_amedas -->|44132.json| repository
 
-  tide_api -->|Tide Info| actions_tide
+  tide_api -->|Tide Data| actions_tide
   actions_tide -->|tide.json| repository
 
   pages --> web_browser
 
-  web_browser2 -->|Edit Spread Sheet<br>Upload Image Files| drive
+  web_browser2 -->|Edit Spreadsheet<br>Upload Image Files| drive
 ```
