@@ -416,6 +416,10 @@
             body.rss-feed-visible .bottom-right {
                 display: none;
             }
+            /* 空項目・RSS 0件時は current-weather を表示（0件時は rss-feed-visible を付けないので上記が効かず表示される） */
+            body.rss-feed-visible.rss-blank-item .bottom-left {
+                display: block;
+            }
             body.rss-feed-visible .top-right {
                 top: 22vh;
                 left: 20px;
