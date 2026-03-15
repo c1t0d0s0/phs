@@ -955,7 +955,7 @@
 
         function sanitizeRssHtml(html) {
             if (typeof DOMPurify === 'undefined') return escapeHtml(html).replace(/\n/g, '<br>');
-            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'input'];
+            var allowedTags = ['p', 'br', 'strong', 'b', 'em', 'i', 'span', 'ul', 'ol', 'li', 'code', 'h1', 'h2', 'h3', 'h4', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'input', 'del', 's', 'strike'];
             var allowedAttr = ['style', 'type', 'disabled', 'checked'];
             DOMPurify.addHook('uponSanitizeAttribute', function(node, data) {
                 if (data.attrName === 'style') {
