@@ -1076,7 +1076,7 @@
             fetchAndRenderWeather();
             setInterval(fetchAndRenderWeather, 600000); 
             fetchAndStartRss();
-            setInterval(fetchAndStartRss, 600000);  // 10分ごとにRSSを再読み込み
+            setInterval(fetchAndStartRss, 60000);  // 1分ごとにRSSを再読み込み
         });
     </script>
 
