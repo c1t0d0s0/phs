@@ -1069,6 +1069,67 @@
             }
         }
 
+        // --- Day/Night Background (tide.json sunrise/sunset) ---
+        function setDefaultBackground() {
+            document.body.style.backgroundImage =
+                "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg')";
+        }
+
+        function applyBackgroundFromSunTimes(sunriseHHMM, sunsetHHMM) {
+            const jstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const currentMinutes = jstNow.getHours() * 60 + jstNow.getMinutes();
+
+            const [sh, sm] = sunriseHHMM.split(':').map(Number);
+            const [eh, em] = sunsetHHMM.split(':').map(Number);
+            const sunriseMin = sh * 60 + sm;
+            const sunsetMin = eh * 60 + em;
+
+            const isDay = currentMinutes >= sunriseMin && currentMinutes < sunsetMin;
+            const image = isDay ? 'background.jpg' : 'night.jpg';
+            document.body.style.backgroundImage =
+                "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('" + image + "')";
+        }
+
+        async function fetchTideAndUpdateBackground() {
+            try {
+                const res = await fetch('tide.json');
+                const data = await res.json();
+                if (data.sunrise && data.sunset) {
+                    applyBackgroundFromSunTimes(data.sunrise, data.sunset);
+                } else {
+                    setDefaultBackground();
+                }
+            } catch (e) {
+                console.warn('Background (tide.json) fetch failed:', e);
+                setDefaultBackground();
+            }
+        }
+
+        function scheduleTideRefetchAt4amJST() {
+            const now = new Date();
+            const jstStr = now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const currentHour = jstNow.getHours();
+
+            let msUntil4am;
+            if (currentHour < 4) {
+                const next4 = new Date(jstNow);
+                next4.setHours(4, 0, 0, 0);
+                msUntil4am = next4.getTime() - jstNow.getTime();
+            } else {
+                const tomorrow4 = new Date(jstNow);
+                tomorrow4.setDate(tomorrow4.getDate() + 1);
+                tomorrow4.setHours(4, 0, 0, 0);
+                msUntil4am = tomorrow4.getTime() - jstNow.getTime();
+            }
+
+            setTimeout(function () {
+                fetchTideAndUpdateBackground();
+                scheduleTideRefetchAt4amJST();
+            }, msUntil4am);
+        }
+
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
@@ -1077,6 +1138,9 @@
             setInterval(fetchAndRenderWeather, 600000); 
             fetchAndStartRss();
             setInterval(fetchAndStartRss, 60000);  // 1分ごとにRSSを再読み込み
+
+            fetchTideAndUpdateBackground();
+            scheduleTideRefetchAt4amJST();
         });
     </script>
 
