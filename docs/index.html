@@ -1070,6 +1070,9 @@
         }
 
         // --- Day/Night Background (tide.json sunrise/sunset) ---
+        let cachedSunrise = null;
+        let cachedSunset = null;
+
         function setDefaultBackground() {
             document.body.style.backgroundImage =
                 "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg')";
@@ -1096,12 +1099,18 @@
                 const res = await fetch('tide.json');
                 const data = await res.json();
                 if (data.sunrise && data.sunset) {
+                    cachedSunrise = data.sunrise;
+                    cachedSunset = data.sunset;
                     applyBackgroundFromSunTimes(data.sunrise, data.sunset);
                 } else {
+                    cachedSunrise = null;
+                    cachedSunset = null;
                     setDefaultBackground();
                 }
             } catch (e) {
                 console.warn('Background (tide.json) fetch failed:', e);
+                cachedSunrise = null;
+                cachedSunset = null;
                 setDefaultBackground();
             }
         }
@@ -1141,6 +1150,11 @@
 
             fetchTideAndUpdateBackground();
             scheduleTideRefetchAt4amJST();
+            setInterval(function () {
+                if (cachedSunrise && cachedSunset) {
+                    applyBackgroundFromSunTimes(cachedSunrise, cachedSunset);
+                }
+            }, 60000);
         });
     </script>
 
