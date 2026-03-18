@@ -197,7 +197,14 @@
             font-size: 3.5rem;
             text-shadow: 1px 1px 2px var(--overlay-color);
         }
-        
+
+        #moon-label {
+            font-size: 1rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            margin-top: 4px;
+        }
+
         .current-weather {
             display: flex;
             align-items: center;
@@ -478,6 +485,7 @@
                 <div id="moon-phase"><svg id="moon-phase-svg"></svg></div>
             </div>
             <div id="date"></div>
+            <div id="moon-label"></div>
         </div>
 
         <div id="rss-feed" class="top-right" aria-live="polite">
@@ -586,6 +594,48 @@
             // 16分割の境界を丸めにする
             const phase = Math.round((moonAge / SYNODIC_DAYS) * 16);
             return ((phase % 16) + 16) % 16 + 1;
+        }
+
+        const moonNamesData = [
+            { min_age: 0.0, max_age: 0.4, label: '新月' },
+            { min_age: 0.5, max_age: 1.4, label: '繊月' },
+            { min_age: 1.5, max_age: 2.4, label: '二日月' },
+            { min_age: 2.5, max_age: 3.4, label: '三日月' },
+            { min_age: 3.5, max_age: 4.4, label: '四日月' },
+            { min_age: 4.5, max_age: 5.4, label: '五日月' },
+            { min_age: 5.5, max_age: 6.4, label: '六日月' },
+            { min_age: 6.5, max_age: 7.4, label: '七日月' },
+            { min_age: 7.5, max_age: 8.4, label: '上弦の月' },
+            { min_age: 8.5, max_age: 9.4, label: '九日月' },
+            { min_age: 9.5, max_age: 10.4, label: '十日月' },
+            { min_age: 10.5, max_age: 11.4, label: '十一日月' },
+            { min_age: 11.5, max_age: 12.4, label: '十二日月' },
+            { min_age: 12.5, max_age: 13.4, label: '十三夜' },
+            { min_age: 13.5, max_age: 14.4, label: '小望月' },
+            { min_age: 14.5, max_age: 15.4, label: '満月' },
+            { min_age: 15.5, max_age: 16.4, label: '十六夜' },
+            { min_age: 16.5, max_age: 17.4, label: '立待月' },
+            { min_age: 17.5, max_age: 18.4, label: '居待月' },
+            { min_age: 18.5, max_age: 19.4, label: '寝待月' },
+            { min_age: 19.5, max_age: 20.4, label: '更待月' },
+            { min_age: 20.5, max_age: 21.4, label: '二十一日月' },
+            { min_age: 21.5, max_age: 22.4, label: '下弦の月' },
+            { min_age: 22.5, max_age: 23.4, label: '二十三夜' },
+            { min_age: 23.5, max_age: 24.4, label: '二十四日月' },
+            { min_age: 24.5, max_age: 25.4, label: '二十五日月' },
+            { min_age: 25.5, max_age: 26.4, label: '二十六夜' },
+            { min_age: 26.5, max_age: 27.4, label: '有明月' },
+            { min_age: 27.5, max_age: 28.4, label: '二十八日月' },
+            { min_age: 28.5, max_age: 29.4, label: '晦日月' },
+            { min_age: 29.5, max_age: 29.9, label: '月隠' }
+        ];
+
+        function getMoonName(moonAge) {
+            const a = moonAge;
+            const entry = moonNamesData.find(function (e) {
+                return a >= e.min_age && a <= e.max_age;
+            });
+            return entry ? entry.label : '新月';
         }
 
         // --- MoonPhasesSVG Lib ---
@@ -775,6 +825,12 @@
             document.getElementById('date').textContent = dateString;
 
             const moonAge = getMoonAge(now);
+            const moonName = getMoonName(moonAge);
+            const moonLabelEl = document.getElementById('moon-label');
+            if (moonLabelEl) {
+                moonLabelEl.textContent = moonName + ' (月齢 ' + moonAge.toFixed(1) + ')';
+            }
+
             const phaseIndex = getMoonPhaseIndex(moonAge);
             const moonSvg = document.getElementById('moon-phase-svg');
             if (moonSvg) {
