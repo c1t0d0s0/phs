@@ -1143,6 +1143,28 @@
         let cachedSunrise = null;
         let cachedSunset = null;
 
+        // --- Page reload when index.html is updated (ETag check, every 10 min) ---
+        let currentPageEtag = null;
+        const PAGE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+
+        async function checkPageUpdate() {
+            try {
+                const base = window.location.pathname;
+                const path = base.endsWith('.html') ? base : base.replace(/\/?$/, '/') + 'index.html';
+                const url = path + (path.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+                const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+                const etag = res.headers.get('etag');
+                if (etag == null) return;
+                if (currentPageEtag !== null && etag !== currentPageEtag) {
+                    window.location.reload();
+                    return;
+                }
+                currentPageEtag = etag;
+            } catch (e) {
+                console.warn('Page update check failed:', e);
+            }
+        }
+
         function setDefaultBackground() {
             document.body.style.backgroundImage =
                 "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg')";
@@ -1225,6 +1247,9 @@
                     applyBackgroundFromSunTimes(cachedSunrise, cachedSunset);
                 }
             }, 60000);
+
+            setTimeout(checkPageUpdate, 2000);
+            setInterval(checkPageUpdate, PAGE_CHECK_INTERVAL_MS);
         });
     </script>
 
