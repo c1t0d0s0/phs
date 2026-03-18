@@ -192,8 +192,14 @@
             font-size: 0.9rem;
             color: #ffffff;
             text-shadow: 1px 1px 2px var(--overlay-color);
-            margin-top: 6px;
+            margin-top: 2px;
             text-align: center;
+        }
+
+        #moon-phase .moon-label-name,
+        #moon-phase .moon-label-age {
+            display: block;
+            line-height: 1.3;
         }
 
         #moon-phase img {
@@ -206,13 +212,6 @@
         #date {
             font-size: 3.5rem;
             text-shadow: 1px 1px 2px var(--overlay-color);
-        }
-
-        #moon-label {
-            font-size: 1rem;
-            color: #ffffff;
-            text-shadow: 1px 1px 2px var(--overlay-color);
-            margin-top: 4px;
         }
 
         .current-weather {
@@ -494,12 +493,14 @@
             <div class="time-row">
                 <div id="clock"></div>
                 <div id="moon-phase">
-                <svg id="moon-phase-svg"></svg>
-                <div id="moon-label"></div>
-            </div>
+                    <svg id="moon-phase-svg"></svg>
+                    <div id="moon-label">
+                        <div class="moon-label-name"></div>
+                        <div class="moon-label-age"></div>
+                    </div>
+                </div>
             </div>
             <div id="date"></div>
-            <div id="moon-label"></div>
         </div>
 
         <div id="rss-feed" class="top-right" aria-live="polite">
@@ -842,7 +843,10 @@
             const moonName = getMoonName(moonAge);
             const moonLabelEl = document.getElementById('moon-label');
             if (moonLabelEl) {
-                moonLabelEl.textContent = moonName + ' (月齢 ' + moonAge.toFixed(1) + ')';
+                const nameEl = moonLabelEl.querySelector('.moon-label-name');
+                const ageEl = moonLabelEl.querySelector('.moon-label-age');
+                if (nameEl) nameEl.textContent = moonName;
+                if (ageEl) ageEl.textContent = '月齢 ' + moonAge.toFixed(1);
             }
 
             const phaseIndex = getMoonPhaseIndex(moonAge);
