@@ -214,6 +214,12 @@
             text-shadow: 1px 1px 2px var(--overlay-color);
         }
 
+        #holiday-name {
+            font-size: 1.5rem;
+            margin-top: 4px;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+        }
+
         .current-weather {
             display: flex;
             align-items: center;
@@ -361,6 +367,7 @@
             }
             #moon-phase svg { width: 22vw; height: 22vw; max-width: 96px; max-height: 96px; }
             #date { font-size: 6vw; margin-top: 5px; }
+            #holiday-name { font-size: 4vw; margin-top: 2px; }
 
             .current-weather {
                 flex-direction: column;
@@ -509,6 +516,7 @@
                 </div>
             </div>
             <div id="date"></div>
+            <div id="holiday-name"></div>
         </div>
 
         <div id="rss-feed" class="top-right" aria-live="polite">
@@ -834,6 +842,31 @@
           };
         })(window);
 
+        // --- Holidays (date.json) ---
+        let holidayData = {};
+        async function fetchHolidays() {
+            try {
+                const res = await fetch('date.json');
+                holidayData = await res.json();
+            } catch (e) {
+                console.warn('Holiday data (date.json) fetch failed:', e);
+                holidayData = {};
+            }
+        }
+        function scheduleHolidayRefetchAtMidnightJST() {
+            const now = new Date();
+            const jstStr = now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const tomorrow = new Date(jstNow);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            const msUntilMidnight = tomorrow.getTime() - jstNow.getTime();
+            setTimeout(function () {
+                fetchHolidays();
+                scheduleHolidayRefetchAtMidnightJST();
+            }, msUntilMidnight);
+        }
+
         // --- Clock and Date ---
         function updateClock() {
             const now = new Date();
@@ -846,6 +879,13 @@
             
             document.getElementById('clock').textContent = timeString;
             document.getElementById('date').textContent = dateString;
+
+            const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const holidayName = holidayData && holidayData[dateKey];
+            const holidayEl = document.getElementById('holiday-name');
+            if (holidayEl) {
+                holidayEl.textContent = holidayName || '';
+            }
 
             const moonAge = getMoonAge(now);
             const moonName = getMoonName(moonAge);
@@ -1247,6 +1287,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
             setInterval(updateClock, 1000); 
+            fetchHolidays();
+            scheduleHolidayRefetchAtMidnightJST();
             fetchAndRenderWeather();
             setInterval(fetchAndRenderWeather, 600000); 
             fetchAndStartRss();

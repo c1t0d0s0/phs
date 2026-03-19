@@ -33,6 +33,9 @@ The following data is fetched automatically by GitHub Actions (cron) and saved a
    * **Workflow:** `.github/workflows/hourly-rss-fetch.yml`
    * **Script:** `scripts/rss.py`
 
+5. **Japanese Public Holiday Data** (`docs/date.json`)
+   * **Source:** `https://holidays-jp.github.io/api/v1/date.json`
+
 ## Directory Structure
 
 * `docs/`: Front-end resources (HTML, CSS, JS) and auto-fetched JSON. Serves as the document root for static hosting (e.g. GitHub Pages).
