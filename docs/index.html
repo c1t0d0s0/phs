@@ -998,14 +998,16 @@
                 const forecastEl = document.getElementById('forecast');
                 forecastEl.innerHTML = ''; 
 
-                const daysCount = Math.min(wkWeatherSeries.timeDefines.length, 7);
-                const todayStr = new Date().toLocaleDateString('ja-JP');
+                const daysCount = wkWeatherSeries.timeDefines.length;
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 
                 for (let i = 0; i < daysCount; i++) {
                     const timeStr = wkWeatherSeries.timeDefines[i];
                     const timeObj = new Date(timeStr);
+                    const itemDate = new Date(timeObj.getFullYear(), timeObj.getMonth(), timeObj.getDate());
 
-                    if (timeObj.toLocaleDateString('ja-JP') === todayStr) {
+                    if (itemDate <= today) {
                         continue;
                     }
                     
@@ -1014,9 +1016,11 @@
                     let minTemp = wkTempArea.tempsMin[i];
                     let maxTemp = wkTempArea.tempsMax[i];
 
-                    // --- Fix "Tomorrow" (Index 0) data from Short-Term if empty ---
+                    const isTomorrow = (itemDate.getTime() - today.getTime()) === 24 * 60 * 60 * 1000;
+
+                    // --- Fix "Tomorrow" data from Short-Term if empty ---
                     // JMA Weekly data sometimes has empty values for the first day (Tomorrow)
-                    if (i === 0 && (pop === '' || maxTemp === '')) {
+                    if (isTomorrow && (pop === '' || maxTemp === '')) {
                         // Get Tomorrow's Code from Short-Term
                         code = stWeatherArea.weatherCodes[1] || code;
                         
