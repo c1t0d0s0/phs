@@ -89,12 +89,11 @@
         }
 
         .top-right .rss-image {
-            flex-shrink: 1;
-            min-height: 0;
+            flex-shrink: 0;
             width: 100%;
             max-width: 100%;
             height: auto;
-            /* タイトル・本文・余白を除いた範囲に収める（操作なしで全体表示） */
+            /* 縦長でも枠内に収める（flex で潰さない／縮小は max-height + object-fit のみ） */
             max-height: min(50vh, calc(100vh - 240px));
             object-fit: contain;
             display: block;
@@ -493,8 +492,7 @@
                 font-size: 2.5vw;
             }
             .top-right .rss-image {
-                flex-shrink: 1;
-                min-height: 0;
+                flex-shrink: 0;
                 width: 100%;
                 max-width: 100%;
                 height: auto;
