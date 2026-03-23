@@ -682,7 +682,7 @@
         ];
 
         function getMoonName(moonAge) {
-            const a = moonAge;
+            const a = Math.round(moonAge * 10) / 10;
             const entry = moonNamesData.find(function (e) {
                 return a >= e.min_age && a <= e.max_age;
             });
