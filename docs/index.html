@@ -88,24 +88,33 @@
             text-align: center;
         }
 
-        .top-right .rss-image {
-            flex-shrink: 0;
-            width: 100%;
+        /* タイトルと本文のあいだの領域いっぱいに画像（縦長は高さ、横長は幅に合わせて contain） */
+        .top-right .rss-image-wrap {
+            flex: 2 1 0;
+            min-height: 0;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .top-right .rss-image-wrap .rss-image {
             max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
-            /* タイトル・本文・余白を除く（50vh 上限はパネルより小さくなりすぎるため使わない） */
-            max-height: calc(100vh - 280px);
             object-fit: contain;
             display: block;
             border-radius: 6px;
-            margin-bottom: 8px;
             background: rgba(0, 0, 0, 0.2);
         }
 
         .top-right .rss-content {
             font-size: 1rem;
             overflow: auto;
-            flex: 1;
+            flex: 1 1 0;
             min-height: 0;
         }
 
@@ -491,14 +500,14 @@
             .top-right .rss-content {
                 font-size: 2.5vw;
             }
-            .top-right .rss-image {
-                flex-shrink: 0;
-                width: 100%;
+            .top-right .rss-image-wrap {
+                flex: 2 1 0;
+                min-height: 0;
+                min-width: 0;
+            }
+            .top-right .rss-image-wrap .rss-image {
                 max-width: 100%;
-                height: auto;
-                object-fit: contain;
-                /* 縦向き: 上 22vh + タイトル・余白・本文の最低域を除いた高さ */
-                max-height: calc(100dvh - 22vh - 160px);
+                max-height: 100%;
             }
         }
 
@@ -1123,7 +1132,11 @@
                 parts.push('<div class="rss-title">' + escapeHtml(item.title) + '</div>');
             }
             if (item.file) {
-                parts.push('<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">');
+                parts.push(
+                    '<div class="rss-image-wrap">' +
+                    '<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">' +
+                    '</div>'
+                );
             }
             if (item.description) {
                 var raw = (typeof marked !== 'undefined') ? marked.parse(item.description) : escapeHtml(item.description).replace(/\n/g, '<br>');
