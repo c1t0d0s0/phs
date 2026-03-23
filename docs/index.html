@@ -93,8 +93,8 @@
             width: 100%;
             max-width: 100%;
             height: auto;
-            /* 縦長でも枠内に収める（flex で潰さない／縮小は max-height + object-fit のみ） */
-            max-height: min(50vh, calc(100vh - 240px));
+            /* タイトル・本文・余白を除く（50vh 上限はパネルより小さくなりすぎるため使わない） */
+            max-height: calc(100vh - 280px);
             object-fit: contain;
             display: block;
             border-radius: 6px;
@@ -497,7 +497,8 @@
                 max-width: 100%;
                 height: auto;
                 object-fit: contain;
-                max-height: min(38vh, calc(100dvh - 32vh));
+                /* 縦向き: 上 22vh + タイトル・余白・本文の最低域を除いた高さ */
+                max-height: calc(100dvh - 22vh - 160px);
             }
         }
 
