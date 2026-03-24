@@ -91,7 +91,7 @@
             text-align: center;
         }
 
-        /* タイトルと本文のあいだの領域いっぱいに画像（縦長は高さ、横長は幅に合わせて contain） */
+        /* Image fills the gap between title and body (contain: tall images by height, wide by width) */
         .top-right .rss-image-wrap {
             flex: 2 1 0;
             min-height: 0;
@@ -171,7 +171,7 @@
             height: auto;
             aspect-ratio: unset;
         }
-        /* 空のRSS項目時: rss-feedを非表示、右下にforecastを表示 */
+        /* When RSS has no items: hide rss-feed, show forecast at bottom-right */
         body.rss-feed-visible.rss-blank-item .bottom-right {
             display: block;
         }
@@ -468,7 +468,7 @@
             body.rss-feed-visible .bottom-right {
                 display: none;
             }
-            /* 空項目・RSS 0件時は current-weather を表示（0件時は rss-feed-visible を付けないので上記が効かず表示される） */
+            /* Empty items or RSS count 0: show current-weather (no rss-feed-visible when 0 items, so prior rule does not apply) */
             body.rss-feed-visible.rss-blank-item .bottom-left {
                 display: block;
             }
@@ -565,11 +565,11 @@
     <script>
         // --- Weather Icon SVGs (JMA 3-digit code style, simple stroke) ---
         const S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" overflow="hidden"';
-        // sunny と同じデザインの太陽（複合アイコン用に scale で配置）
+        // Sun matching sunny icon design (scaled for composite icon layout)
         const sunPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
         const sunTL = '<g transform="scale(0.5)">'+sunPath+'</g>';
         const sunBR = '<g transform="translate(12,12) scale(0.5)">'+sunPath+'</g>';
-        // 右下要素は viewBox 内に収めるため scale と translate を控えめに
+        // Sun matching sunny icon design (scaled for composite icon layout)
         const cloudBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
         const cloudTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
         const rainBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></g>';
@@ -645,7 +645,7 @@
         }
 
         function getMoonPhaseIndex(moonAge) {
-            // 16分割の境界を丸めにする
+            // Round boundaries for 16-way phase buckets
             const phase = Math.round((moonAge / SYNODIC_DAYS) * 16);
             return ((phase % 16) + 16) % 16 + 1;
         }
@@ -770,7 +770,7 @@
                 labelColor: "#b8c3d8",
                 showLabels: true,
                 labelStart: 1,
-                // 1始まりで指定。nullなら全段階を描画
+                // 1-based phase index; null draws all phases
                 phaseIndex: null
               },
               options || {}
@@ -1096,7 +1096,7 @@
             }
         }
 
-        // --- RSS Feed (お知らせ): Markdown + 色用HTML（リンクは許可しない） ---
+        // --- RSS feed (notices): Markdown + HTML for styling (links not allowed) ---
         let rssItems = [];
         let rssIndex = 0;
         let rssTimer = null;
@@ -1323,7 +1323,7 @@
             fetchAndRenderWeather();
             setInterval(fetchAndRenderWeather, 600000); 
             fetchAndStartRss();
-            setInterval(fetchAndStartRss, 60000);  // 1分ごとにRSSを再読み込み
+            setInterval(fetchAndStartRss, 60000);  // Reload RSS every minute
 
             fetchTideAndUpdateBackground();
             scheduleTideRefetchAt4amJST();
