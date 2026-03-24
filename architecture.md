@@ -44,7 +44,7 @@ flowchart LR
   apps -->|RSS Feed| actions_rss
   actions_rss -->|Deploy| pages
 
-  forecast_api -->|Weather Forecast| actions_forecast
+  forecast_api -->|Weather Forecast Data| actions_forecast
   actions_forecast -->|130000.json| repository
 
   amedas_api -->|AMeDAS Data| actions_amedas

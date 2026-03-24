@@ -15,7 +15,7 @@ flowchart LR
     apps[RSSフィード生成<br>Apps Script]
   end
 
-  subgraph JMA[**気象庁 JMA**]
+  subgraph JMA[**気象庁**]
     forecast_api[天気予報API]
     amedas_api[アメダスAPI]
   end
@@ -44,7 +44,7 @@ flowchart LR
   apps -->|RSSフィード| actions_rss
   actions_rss -->|デプロイ| pages
 
-  forecast_api -->|天気予報| actions_forecast
+  forecast_api -->|天気予報データ| actions_forecast
   actions_forecast -->|130000.json| repository
 
   amedas_api -->|アメダスデータ| actions_amedas
