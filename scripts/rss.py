@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Fetch RSS feed from Google Apps Script URL and output JSON to stdout.
-Downloads images to <output_dir>/images/ and rewrites image URLs to local paths.
+Downloads images to <output_dir>/images/ (default) or images-test/ with --test,
+and rewrites image URLs to local paths.
 Used by GitHub Actions to update docs/rss.json and docs/images for Pages deploy.
 """
 
+import argparse
 import json
 import os
 import re
@@ -17,6 +19,8 @@ import requests
 from PIL import Image
 
 RSS_URL = "https://script.google.com/macros/s/AKfycbxKygdEFZRz5BFzFOP52e-HkgLry-B6qrtNEcZvMXkF8CRzHGbpWCbQ6n5y6VD7dHB8/exec"
+# Staging / test feed (used only with: python scripts/rss.py docs --test)
+RSS_TEST_URL = "https://script.google.com/macros/s/AKfycby5SjZ6wJ03ft3a-RmYlEu9SWDZ7_L6j1Ny_PZtXIAxjjH5sqd1dhyunPBXY9qyKdkTVQ/exec"
 CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
 
 
@@ -72,7 +76,7 @@ def download_image(url, images_dir, save_filename, image_index=0, timeout=30):
         return None
 
 
-def parse_item(item, out_dir=None, image_index=None):
+def parse_item(item, out_dir=None, image_index=None, images_subdir="images"):
     title_el = item.find("title")
     title = text_or_empty(title_el) if title_el is not None else ""
 
@@ -100,13 +104,13 @@ def parse_item(item, out_dir=None, image_index=None):
 
     image = image_url
     if out_dir and image_url and file_name and image_index is not None:
-        images_dir = os.path.join(out_dir, "images")
+        images_dir = os.path.join(out_dir, images_subdir)
         os.makedirs(images_dir, exist_ok=True)
         path = download_image(
             image_url, images_dir, save_filename=file_name, image_index=image_index
         )
         if path:
-            image = os.path.join("images", os.path.basename(path))
+            image = f"{images_subdir}/{os.path.basename(path)}"
 
     return {
         "title": title,
@@ -119,9 +123,35 @@ def parse_item(item, out_dir=None, image_index=None):
 
 
 def main():
-    out_dir = (sys.argv[1] if len(sys.argv) > 1 else "docs").strip() or None
+    parser = argparse.ArgumentParser(description="Fetch RSS and write JSON to stdout.")
+    parser.add_argument(
+        "out_dir",
+        nargs="?",
+        default="docs",
+        help="Directory for downloaded images (default: docs)",
+    )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Use RSS_TEST_URL and save images under images-test/",
+    )
+    args = parser.parse_args()
+    out_dir = (args.out_dir or "").strip() or None
 
-    r = requests.get(RSS_URL, timeout=30)
+    if args.test:
+        url = RSS_TEST_URL.strip()
+        if not url:
+            print(
+                "RSS_TEST_URL is empty; set it in rss.py for --test",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        images_subdir = "images-test"
+    else:
+        url = RSS_URL
+        images_subdir = "images"
+
+    r = requests.get(url, timeout=30)
     r.raise_for_status()
     root = ET.fromstring(r.content)
 
@@ -129,21 +159,27 @@ def main():
     if channel is None:
         channel = root
 
+    prefix = f"{images_subdir}/"
     items = []
     image_counter = 0
     for item in channel.findall("item"):
-        parsed = parse_item(item, out_dir, image_index=image_counter if out_dir else None)
+        parsed = parse_item(
+            item,
+            out_dir,
+            image_index=image_counter if out_dir else None,
+            images_subdir=images_subdir,
+        )
         if out_dir and parsed.get("file"):
             image_counter += 1
         items.append(parsed)
 
-    # Remove images in docs/images/ that are no longer referenced by the current feed
+    # Remove unreferenced images only in the directory used for this run
     if out_dir:
-        images_dir = os.path.join(out_dir, "images")
+        images_dir = os.path.join(out_dir, images_subdir)
         used_basenames = {
             os.path.basename(item["image"])
             for item in items
-            if (item.get("image") or "").startswith("images/")
+            if (item.get("image") or "").startswith(prefix)
         }
         if os.path.isdir(images_dir):
             for name in os.listdir(images_dir):

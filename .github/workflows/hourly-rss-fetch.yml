@@ -36,6 +36,7 @@ jobs:
       - name: Run RSS script (download images to docs/images, generate docs/rss.json)
         run: |
           python scripts/rss.py docs > docs/rss.json
+          python scripts/rss.py docs --test > docs/rss-test.json
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
