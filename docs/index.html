@@ -1097,6 +1097,18 @@
         }
 
         // --- RSS feed (notices): Markdown + HTML for styling (links not allowed) ---
+        function isRssTestMode() {
+            return new URLSearchParams(window.location.search).has('test');
+        }
+        function rssFeedJsonUrl() {
+            return isRssTestMode() ? 'rss-test.json' : 'rss.json';
+        }
+        function rssItemImageSrc(item) {
+            var im = (item.image || '').trim();
+            if (im.indexOf('images-test/') === 0 || im.indexOf('images/') === 0) return im;
+            if (item.file) return (isRssTestMode() ? 'images-test/' : 'images/') + item.file;
+            return '';
+        }
         let rssItems = [];
         let rssIndex = 0;
         let rssTimer = null;
@@ -1134,10 +1146,11 @@
             if (item.title) {
                 parts.push('<div class="rss-title">' + escapeHtml(item.title) + '</div>');
             }
-            if (item.file) {
+            var imgSrc = rssItemImageSrc(item);
+            if (imgSrc) {
                 parts.push(
                     '<div class="rss-image-wrap">' +
-                    '<img class="rss-image" src="' + escapeHtml('images/' + item.file) + '" alt="">' +
+                    '<img class="rss-image" src="' + escapeHtml(imgSrc) + '" alt="">' +
                     '</div>'
                 );
             }
@@ -1192,7 +1205,7 @@
         async function fetchAndStartRss() {
             const el = document.getElementById('rss-feed');
             try {
-                const res = await fetch('rss.json');
+                const res = await fetch(rssFeedJsonUrl());
                 if (!res.ok) {
                     if (el) el.style.display = 'none';
                     if (el) el.setAttribute('data-loaded', 'true');
