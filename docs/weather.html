@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weather Forecast (JMA)</title>
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --text-color: #ffffff;
@@ -12,11 +15,15 @@
             --overlay-color: rgba(0, 0, 0, 0.5);
         }
 
+        * {
+            cursor: none !important;
+        }
+
         body, html {
             height: 100%;
             margin: 0;
             padding: 0;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Noto Sans JP', sans-serif;
             color: var(--text-color);
             background-color: var(--bg-color);
             background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg');
@@ -70,16 +77,32 @@
 
         #moon-phase {
             width: 120px;
-            height: 120px;
             margin-left: 48px;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         #moon-phase svg {
-            width: 100%;
-            height: 100%;
+            width: 120px;
+            height: 120px;
             display: block;
             filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
+        }
+
+        #moon-phase #moon-label {
+            font-size: 0.9rem;
+            color: #ffffff;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        #moon-phase .moon-label-name,
+        #moon-phase .moon-label-age {
+            display: block;
+            line-height: 1.3;
         }
 
         #moon-phase img {
@@ -91,6 +114,13 @@
 
         #date {
             font-size: 3.5rem;
+            text-shadow: 1px 1px 2px var(--overlay-color);
+        }
+
+        #holiday-name {
+            font-size: 1.5rem;
+            margin-top: 4px;
+            color: #ff6b6b;
             text-shadow: 1px 1px 2px var(--overlay-color);
         }
         
@@ -230,8 +260,18 @@
             }
             
             #clock { font-size: 18vw; line-height: 1; }
-            #moon-phase { width: 22vw; height: 22vw; max-width: 96px; max-height: 96px; margin-left: 6vw; }
+            #moon-phase {
+                position: fixed;
+                top: 30px;
+                right: 20px;
+                left: auto;
+                width: 22vw;
+                max-width: 96px;
+                margin-left: 0;
+            }
+            #moon-phase svg { width: 22vw; height: 22vw; max-width: 96px; max-height: 96px; }
             #date { font-size: 6vw; margin-top: 5px; }
+            #holiday-name { font-size: 4vw; margin-top: 2px; color: #ff6b6b; }
 
             .current-weather {
                 flex-direction: column;
@@ -322,9 +362,16 @@
         <div class="top-left">
             <div class="time-row">
                 <div id="clock"></div>
-                <div id="moon-phase"><svg id="moon-phase-svg"></svg></div>
+                <div id="moon-phase">
+                    <svg id="moon-phase-svg"></svg>
+                    <div id="moon-label">
+                        <div class="moon-label-name"></div>
+                        <div class="moon-label-age"></div>
+                    </div>
+                </div>
             </div>
             <div id="date"></div>
+            <div id="holiday-name"></div>
         </div>
 
         <div class="bottom-left">
@@ -344,11 +391,11 @@
     <script>
         // --- Weather Icon SVGs (JMA 3-digit code style, simple stroke) ---
         const S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" overflow="hidden"';
-        // sunny と同じデザインの太陽（複合アイコン用に scale で配置）
+        // Sun matching sunny icon design (scaled for composite icon layout)
         const sunPath = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
         const sunTL = '<g transform="scale(0.5)">'+sunPath+'</g>';
         const sunBR = '<g transform="translate(12,12) scale(0.5)">'+sunPath+'</g>';
-        // 右下要素は viewBox 内に収めるため scale と translate を控えめに
+        // Bottom-right glyphs: modest scale/translate so they stay inside viewBox
         const cloudBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
         const cloudTL = '<g transform="scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></g>';
         const rainBR = '<g transform="translate(8,8) scale(0.58)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m12 13-4 10"/><path d="m8 13-4 10"/><path d="m16 13-4 10"/></g>';
@@ -424,9 +471,51 @@
         }
 
         function getMoonPhaseIndex(moonAge) {
-            // 16分割の境界を丸めにする
+            // Round boundaries for 16-way phase buckets
             const phase = Math.round((moonAge / SYNODIC_DAYS) * 16);
             return ((phase % 16) + 16) % 16 + 1;
+        }
+
+        const moonNamesData = [
+            { min_age: 0.0, max_age: 0.4, label: '新月' },
+            { min_age: 0.5, max_age: 1.4, label: '繊月' },
+            { min_age: 1.5, max_age: 2.4, label: '二日月' },
+            { min_age: 2.5, max_age: 3.4, label: '三日月' },
+            { min_age: 3.5, max_age: 4.4, label: '四日月' },
+            { min_age: 4.5, max_age: 5.4, label: '五日月' },
+            { min_age: 5.5, max_age: 6.4, label: '六日月' },
+            { min_age: 6.5, max_age: 7.4, label: '七日月' },
+            { min_age: 7.5, max_age: 8.4, label: '上弦の月' },
+            { min_age: 8.5, max_age: 9.4, label: '九日月' },
+            { min_age: 9.5, max_age: 10.4, label: '十日月' },
+            { min_age: 10.5, max_age: 11.4, label: '十一日月' },
+            { min_age: 11.5, max_age: 12.4, label: '十二日月' },
+            { min_age: 12.5, max_age: 13.4, label: '十三夜' },
+            { min_age: 13.5, max_age: 14.4, label: '小望月' },
+            { min_age: 14.5, max_age: 15.4, label: '満月' },
+            { min_age: 15.5, max_age: 16.4, label: '十六夜' },
+            { min_age: 16.5, max_age: 17.4, label: '立待月' },
+            { min_age: 17.5, max_age: 18.4, label: '居待月' },
+            { min_age: 18.5, max_age: 19.4, label: '寝待月' },
+            { min_age: 19.5, max_age: 20.4, label: '更待月' },
+            { min_age: 20.5, max_age: 21.4, label: '二十一日月' },
+            { min_age: 21.5, max_age: 22.4, label: '下弦の月' },
+            { min_age: 22.5, max_age: 23.4, label: '二十三夜' },
+            { min_age: 23.5, max_age: 24.4, label: '二十四日月' },
+            { min_age: 24.5, max_age: 25.4, label: '二十五日月' },
+            { min_age: 25.5, max_age: 26.4, label: '二十六夜' },
+            { min_age: 26.5, max_age: 27.4, label: '有明月' },
+            { min_age: 27.5, max_age: 28.4, label: '二十八日月' },
+            { min_age: 28.5, max_age: 29.4, label: '晦日月' },
+            { min_age: 29.5, max_age: 29.9, label: '月隠' }
+        ];
+
+        function getMoonName(moonAge) {
+            const a = Math.round(moonAge * 10) / 10;
+            const entry = moonNamesData.find(function (e) {
+                return a >= e.min_age && a <= e.max_age;
+            });
+            return entry ? entry.label : '新月';
         }
 
         // --- MoonPhasesSVG Lib ---
@@ -507,7 +596,7 @@
                 labelColor: "#b8c3d8",
                 showLabels: true,
                 labelStart: 1,
-                // 1始まりで指定。nullなら全段階を描画
+                // 1-based phase index; null draws all phases
                 phaseIndex: null
               },
               options || {}
@@ -602,16 +691,61 @@
           };
         })(window);
 
+        // --- Holidays (date.json) ---
+        let holidayData = {};
+        async function fetchHolidays() {
+            try {
+                const res = await fetch('date.json');
+                holidayData = await res.json();
+            } catch (e) {
+                console.warn('Holiday data (date.json) fetch failed:', e);
+                holidayData = {};
+            }
+        }
+        function scheduleHolidayRefetchAtMidnightJST() {
+            const now = new Date();
+            const jstStr = now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const tomorrow = new Date(jstNow);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            const msUntilMidnight = tomorrow.getTime() - jstNow.getTime();
+            setTimeout(function () {
+                fetchHolidays();
+                scheduleHolidayRefetchAtMidnightJST();
+            }, msUntilMidnight);
+        }
+
         // --- Clock and Date ---
         function updateClock() {
             const now = new Date();
             const timeString = now.toLocaleTimeString('ja-JP', { hour: 'numeric', minute: '2-digit' });
-            const dateString = now.toLocaleDateString('ja-JP', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
+            const y = now.getFullYear();
+            const m = now.getMonth() + 1;
+            const d = now.getDate();
+            const w = now.toLocaleDateString('ja-JP', { weekday: 'short' });
+            const dateString = `${y}年${m}月${d}日(${w})`;
+
             document.getElementById('clock').textContent = timeString;
             document.getElementById('date').textContent = dateString;
 
+            const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const holidayName = holidayData && holidayData[dateKey];
+            const holidayEl = document.getElementById('holiday-name');
+            if (holidayEl) {
+                holidayEl.textContent = holidayName || '';
+            }
+
             const moonAge = getMoonAge(now);
+            const moonName = getMoonName(moonAge);
+            const moonLabelEl = document.getElementById('moon-label');
+            if (moonLabelEl) {
+                const nameEl = moonLabelEl.querySelector('.moon-label-name');
+                const ageEl = moonLabelEl.querySelector('.moon-label-age');
+                if (nameEl) nameEl.textContent = moonName;
+                if (ageEl) ageEl.textContent = '月齢 ' + moonAge.toFixed(1);
+            }
+
             const phaseIndex = getMoonPhaseIndex(moonAge);
             const moonSvg = document.getElementById('moon-phase-svg');
             if (moonSvg) {
@@ -706,60 +840,56 @@
                 if (!wkWeatherArea || !wkTempArea) return;
 
                 const forecastEl = document.getElementById('forecast');
-                forecastEl.innerHTML = ''; 
+                forecastEl.innerHTML = '';
 
-                const daysCount = Math.min(wkWeatherSeries.timeDefines.length, 7);
-                const todayStr = new Date().toLocaleDateString('ja-JP');
-                
+                const daysCount = wkWeatherSeries.timeDefines.length;
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
                 for (let i = 0; i < daysCount; i++) {
                     const timeStr = wkWeatherSeries.timeDefines[i];
                     const timeObj = new Date(timeStr);
+                    const itemDate = new Date(timeObj.getFullYear(), timeObj.getMonth(), timeObj.getDate());
 
-                    if (timeObj.toLocaleDateString('ja-JP') === todayStr) {
+                    if (itemDate <= today) {
                         continue;
                     }
-                    
+
                     let code = wkWeatherArea.weatherCodes[i];
                     let pop = wkWeatherArea.pops[i];
                     let minTemp = wkTempArea.tempsMin[i];
                     let maxTemp = wkTempArea.tempsMax[i];
 
-                    // --- Fix "Tomorrow" (Index 0) data from Short-Term if empty ---
+                    const isTomorrow = (itemDate.getTime() - today.getTime()) === 24 * 60 * 60 * 1000;
+
+                    // --- Fix "Tomorrow" data from Short-Term if empty ---
                     // JMA Weekly data sometimes has empty values for the first day (Tomorrow)
-                    if (i === 0 && (pop === '' || maxTemp === '')) {
-                        // Get Tomorrow's Code from Short-Term
+                    if (isTomorrow && (pop === '' || maxTemp === '')) {
                         code = stWeatherArea.weatherCodes[1] || code;
-                        
-                        // Get Tomorrow's Max/Min from Short-Term
-                        // Typically Index 2 = Tomorrow Min, Index 3 = Tomorrow Max in stTempArea
+
                         if (stTempArea.temps.length >= 4) {
                             minTemp = stTempArea.temps[2] || minTemp;
                             maxTemp = stTempArea.temps[3] || maxTemp;
                         }
-                        
-                        // Get Tomorrow's Max POP from Short-Term 6-hour slots
+
                         if (stPopArea) {
-                             // Tomorrow typically starts around index 4 in 6-hour slots (if reported at 11:00)
-                             // We find slots matching Tomorrow's date
-                             const tomorrowStr = timeObj.toISOString().split('T')[0];
-                             const tomorrowPops = [];
-                             shortTerm.timeSeries[1].timeDefines.forEach((t, idx) => {
-                                 if (t.startsWith(tomorrowStr)) {
-                                     tomorrowPops.push(parseInt(stPopArea.pops[idx]));
-                                 }
-                             });
-                             if (tomorrowPops.length > 0) {
-                                 pop = Math.max(...tomorrowPops).toString();
-                             }
+                            const tomorrowStr = timeObj.toISOString().split('T')[0];
+                            const tomorrowPops = [];
+                            shortTerm.timeSeries[1].timeDefines.forEach((t, idx) => {
+                                if (t.startsWith(tomorrowStr)) {
+                                    tomorrowPops.push(parseInt(stPopArea.pops[idx]));
+                                }
+                            });
+                            if (tomorrowPops.length > 0) {
+                                pop = Math.max(...tomorrowPops).toString();
+                            }
                         }
                     }
 
-                    // Defaults
                     if (minTemp === '') minTemp = '-';
                     if (maxTemp === '') maxTemp = '-';
                     if (pop === '') pop = '--';
 
-                    // Format Date
                     const month = timeObj.getMonth() + 1;
                     const date = timeObj.getDate();
                     const day = timeObj.toLocaleDateString('ja-JP', { weekday: 'short' });
@@ -767,7 +897,7 @@
 
                     const forecastItemEl = document.createElement('div');
                     forecastItemEl.className = 'forecast-item';
-                    
+
                     forecastItemEl.innerHTML = `
                         <div class="time">${dateLabel}</div>
                         <div class="icon">${getIcon(code)}</div>
@@ -784,12 +914,117 @@
             }
         }
 
+        // --- Day/Night Background (tide.json sunrise/sunset) ---
+        let cachedSunrise = null;
+        let cachedSunset = null;
+
+        // --- Page reload when weather.html is updated (ETag check, every 10 min) ---
+        let currentPageEtag = null;
+        const PAGE_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+
+        async function checkPageUpdate() {
+            try {
+                const base = window.location.pathname;
+                const path = base.endsWith('.html') ? base : base.replace(/\/?$/, '/') + 'weather.html';
+                const url = path + (path.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now();
+                const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+                const etag = res.headers.get('etag');
+                if (etag == null) return;
+                if (currentPageEtag !== null && etag !== currentPageEtag) {
+                    window.location.reload();
+                    return;
+                }
+                currentPageEtag = etag;
+            } catch (e) {
+                console.warn('Page update check failed:', e);
+            }
+        }
+
+        function setDefaultBackground() {
+            document.body.style.backgroundImage =
+                "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('background.jpg')";
+        }
+
+        function applyBackgroundFromSunTimes(sunriseHHMM, sunsetHHMM) {
+            const jstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const currentMinutes = jstNow.getHours() * 60 + jstNow.getMinutes();
+
+            const [sh, sm] = sunriseHHMM.split(':').map(Number);
+            const [eh, em] = sunsetHHMM.split(':').map(Number);
+            const sunriseMin = sh * 60 + sm;
+            const sunsetMin = eh * 60 + em;
+
+            const isDay = currentMinutes >= sunriseMin && currentMinutes < sunsetMin;
+            const image = isDay ? 'background.jpg' : 'night.jpg';
+            document.body.style.backgroundImage =
+                "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('" + image + "')";
+        }
+
+        async function fetchTideAndUpdateBackground() {
+            try {
+                const res = await fetch('tide.json');
+                const data = await res.json();
+                if (data.sunrise && data.sunset) {
+                    cachedSunrise = data.sunrise;
+                    cachedSunset = data.sunset;
+                    applyBackgroundFromSunTimes(data.sunrise, data.sunset);
+                } else {
+                    cachedSunrise = null;
+                    cachedSunset = null;
+                    setDefaultBackground();
+                }
+            } catch (e) {
+                console.warn('Background (tide.json) fetch failed:', e);
+                cachedSunrise = null;
+                cachedSunset = null;
+                setDefaultBackground();
+            }
+        }
+
+        function scheduleTideRefetchAt4amJST() {
+            const now = new Date();
+            const jstStr = now.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' });
+            const jstNow = new Date(jstStr);
+            const currentHour = jstNow.getHours();
+
+            let msUntil4am;
+            if (currentHour < 4) {
+                const next4 = new Date(jstNow);
+                next4.setHours(4, 0, 0, 0);
+                msUntil4am = next4.getTime() - jstNow.getTime();
+            } else {
+                const tomorrow4 = new Date(jstNow);
+                tomorrow4.setDate(tomorrow4.getDate() + 1);
+                tomorrow4.setHours(4, 0, 0, 0);
+                msUntil4am = tomorrow4.getTime() - jstNow.getTime();
+            }
+
+            setTimeout(function () {
+                fetchTideAndUpdateBackground();
+                scheduleTideRefetchAt4amJST();
+            }, msUntil4am);
+        }
+
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
             updateClock();
-            setInterval(updateClock, 1000); 
+            setInterval(updateClock, 1000);
+            fetchHolidays();
+            scheduleHolidayRefetchAtMidnightJST();
             fetchAndRenderWeather();
-            setInterval(fetchAndRenderWeather, 600000); 
+            setInterval(fetchAndRenderWeather, 600000);
+
+            fetchTideAndUpdateBackground();
+            scheduleTideRefetchAt4amJST();
+            setInterval(function () {
+                if (cachedSunrise && cachedSunset) {
+                    applyBackgroundFromSunTimes(cachedSunrise, cachedSunset);
+                }
+            }, 60000);
+
+            setTimeout(checkPageUpdate, 2000);
+            setInterval(checkPageUpdate, PAGE_CHECK_INTERVAL_MS);
         });
     </script>
 
