@@ -1128,7 +1128,8 @@
                     var parts = (data.attrValue || '').split(';');
                     for (var i = 0; i < parts.length; i++) {
                         var part = parts[i].trim().toLowerCase();
-                        if (part.indexOf('color:') === 0 || part.indexOf('background-color:') === 0)
+                        if (part.indexOf('color:') === 0 || part.indexOf('background-color:') === 0 ||
+                            part.indexOf('font-size:') === 0 || part.indexOf('font-weight:') === 0)
                             kept.push(parts[i].trim());
                     }
                     data.attrValue = kept.join('; ');
