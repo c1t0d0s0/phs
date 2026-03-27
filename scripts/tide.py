@@ -4,7 +4,6 @@ import sys
 import requests
 import json
 import datetime
-import math
 from astral import LocationInfo
 from astral.sun import sun
 
@@ -23,7 +22,7 @@ def get_tide_data():
         year = now.year
         month = now.month
         day = now.day
-        
+
         # 芝浦の潮汐情報を取得
         url = f"https://tide736.net/api/get_tide.php?pc=13&hc=2&yr={year}&mn={month}&dy={day}&rg=day"
         response = requests.get(url)
@@ -32,26 +31,26 @@ def get_tide_data():
 
         tide_summary = []
         tide_hourly = []
-        
+
         # 今日の日付のキー 'YYYY-MM-DD'
         date_key = now.strftime('%Y-%m-%d')
-        
+
         if api_data.get("status") == 1 and date_key in api_data.get("tide", {}).get("chart", {}):
             chart_data = api_data["tide"]["chart"][date_key]
-            
+
             # 満潮・干潮のデータを整形
-            for event in chart_data.get("flood", []): # 満潮
+            for event in chart_data.get("flood", []):  # 満潮
                 time_str = event.get("time")
                 cm_val = event.get("cm")
                 if time_str and cm_val is not None:
                     tide_summary.append(f"{time_str} ({int(cm_val)}cm)")
-            
-            for event in chart_data.get("edd", []): # 干潮
+
+            for event in chart_data.get("edd", []):  # 干潮
                 time_str = event.get("time")
                 cm_val = event.get("cm")
                 if time_str and cm_val is not None:
                     tide_summary.append(f"{time_str} ({int(cm_val)}cm)")
-            
+
             # 1時間ごとの潮位データを整形
             for event in chart_data.get("tide", []):
                 time_str = event.get("time")
@@ -84,17 +83,17 @@ def get_tide_name(moon_age):
     age = round(moon_age % 29.5)
 
     if age in [0, 1, 2, 14, 15, 16, 17, 29]:
-        return "大潮" # 新月または満月。 潮の干満差が最も大きい時期。
+        return "大潮"  # 新月または満月。 潮の干満差が最も大きい時期。
     elif age in [3, 4, 5, 6, 12, 13, 18, 19, 20, 21, 27, 28]:
-        return "中潮" # 新月や満月に向けて再び干満差が大きくなる時期。
+        return "中潮"  # 新月や満月に向けて再び干満差が大きくなる時期。
     elif age in [7, 8, 9, 22, 23, 24]:
-        return "小潮" # 下弦の月や上弦の月。干満差が小さくなる時期。
+        return "小潮"  # 下弦の月や上弦の月。干満差が小さくなる時期。
     elif age in [10, 25]:
-        return "長潮" # 干満差が最も小さく、潮の動きが緩慢な時期。
+        return "長潮"  # 干満差が最も小さく、潮の動きが緩慢な時期。
     elif age in [11, 26]:
-        return "若潮" # 長潮の翌日。潮が再び動き出す（若返る）時期
+        return "若潮"  # 長潮の翌日。潮が再び動き出す（若返る）時期
     else:
-        return "中潮" # 例外処理（基本的にはここには来ない）
+        return "中潮"  # 例外処理（基本的にはここには来ない）
 
 
 def get_moon_age():
@@ -129,7 +128,7 @@ def main():
 
     sunrise = s["sunrise"]
     sunset = s["sunset"]
-    
+
     sunrise_time = sunrise.strftime('%H:%M') if sunrise else "N/A"
     sunset_time = sunset.strftime('%H:%M') if sunset else "N/A"
 
@@ -146,6 +145,7 @@ def main():
     }
 
     json.dump(data, sys.stdout, ensure_ascii=False, indent=2)
+
 
 if __name__ == "__main__":
     main()
