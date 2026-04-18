@@ -315,8 +315,8 @@
         }
 
         .forecast-item .icon {
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
             margin-bottom: 5px;
         }
         
@@ -444,6 +444,12 @@
                 max-width: 30px;
                 max-height: 30px;
                 margin-bottom: 0;
+            }
+            @media (min-width: 600px) {
+                .forecast-item .icon {
+                    max-width: 60px;
+                    max-height: 60px;
+                }
             }
             .forecast-item .temp-pop-wrapper {
                 display: flex;
