@@ -944,6 +944,36 @@
         }
 
 
+        // --- Color Helpers ---
+        function getPopColor(pop) {
+            const val = parseInt(pop, 10);
+            if (isNaN(val)) return '';
+            if (val >= 80) return 'color: #00FFFF;';
+            if (val >= 50) return 'color: #A0E0E0;';
+            return 'color: #ffffff;';
+        }
+        function getTempColor(temp) {
+            const val = parseFloat(temp);
+            if (isNaN(val)) return '';
+            if (val >= 35) return 'color: #FF5500;';
+            if (val >= 30) return 'color: #FFA500;';
+            if (val <= 5) return 'color: #00FFFF;';
+            return '';
+        }
+        function getHumidityColor(humidity) {
+            const val = parseInt(humidity, 10);
+            if (isNaN(val)) return '';
+            if (val <= 35) return 'color: #FFFF00;';
+            if (val >= 80) return 'color: #00FFFF;';
+            return '';
+        }
+        function getWindSpeedColor(windSpeed) {
+            const val = parseFloat(windSpeed);
+            if (isNaN(val)) return '';
+            if (val >= 8) return 'color: #FFFF00;';
+            return '';
+        }
+
         // --- Wind Direction ---
         const WIND_DIRECTIONS = [
             '静穏', '北北東', '北東', '東北東', '東', '東南東', '南東', '南南東',
@@ -1000,10 +1030,10 @@
                     currentWeatherEl.innerHTML = `
                         <div class="icon">${getIcon(todayCode)}</div>
                         <div class="details">
-                            <div class="temp">${temp}℃</div>
+                            <div class="temp" style="${getTempColor(temp)}">${temp}℃</div>
                             <div class="extra-info">
-                                <span>湿度: ${humidity}%</span>
-                                <span>風速: ${windDir} ${windSpeed}m/s</span>
+                                <span style="${getHumidityColor(humidity)}">湿度: ${humidity}%</span>
+                                <span style="${getWindSpeedColor(windSpeed)}">風速: ${windDir} ${windSpeed}m/s</span>
                             </div>
                             <div class="description">${todayText}</div>
                         </div>
@@ -1090,8 +1120,8 @@
                         <div class="time">${dateLabel}</div>
                         <div class="icon">${getIcon(code)}</div>
                         <div class="temp-pop-wrapper">
-                            <div class="temp-range"><span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${maxTemp}</span>℃ / <span style="display:inline-block; width:2ch; text-align:right; font-variant-numeric:tabular-nums;">${minTemp}</span>℃</div>
-                            <div class="pop">降水確率 ${pop}%</div>
+                            <div class="temp-range"><span style="display:inline-block; width:3.5ch; text-align:right; font-variant-numeric:tabular-nums; ${getTempColor(maxTemp)}">${maxTemp}℃</span> / <span style="display:inline-block; width:3.5ch; text-align:right; font-variant-numeric:tabular-nums; ${getTempColor(minTemp)}">${minTemp}℃</span></div>
+                            <div class="pop" style="${getPopColor(pop)}">降水確率 ${pop}%</div>
                         </div>
                     `;
                     forecastEl.appendChild(forecastItemEl);
