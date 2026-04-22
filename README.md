@@ -1,4 +1,4 @@
-[![pages-build-deployment](https://github.com/c1t0d0s0/phs/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/c1t0d0s0/phs/actions/workflows/pages/pages-build-deployment)
+[![build](https://github.com/c1t0d0s0/phs/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/c1t0d0s0/phs/actions/workflows/pages/pages-build-deployment)
 [![release](https://img.shields.io/github/v/release/c1t0d0s0/phs)](https://github.com/c1t0d0s0/phs/releases/latest)
 [![license](https://img.shields.io/github/license/c1t0d0s0/phs)](LICENSE)
 
