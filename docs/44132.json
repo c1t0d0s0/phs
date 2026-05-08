@@ -2,24 +2,24 @@
   "station_code": "44132",
   "source": {
     "latest_time_url": "https://www.jma.go.jp/bosai/amedas/data/latest_time.txt",
-    "map_url": "https://www.jma.go.jp/bosai/amedas/data/map/20260508145000.json",
-    "fetched_at": "2026-05-08T15:03:29.375870+09:00"
+    "map_url": "https://www.jma.go.jp/bosai/amedas/data/map/20260508164000.json",
+    "fetched_at": "2026-05-08T16:54:17.402085+09:00"
   },
   "data": {
     "pressure": [
-      999.8,
+      999.1,
       0
     ],
     "normalPressure": [
-      1002.5,
+      1001.9,
       0
     ],
     "temp": [
-      24.8,
+      23.3,
       0
     ],
     "humidity": [
-      69,
+      66,
       0
     ],
     "sun10m": [
@@ -47,11 +47,11 @@
       0
     ],
     "windDirection": [
-      7,
+      8,
       0
     ],
     "wind": [
-      3.9,
+      5.2,
       0
     ]
   }
