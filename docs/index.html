@@ -1148,6 +1148,33 @@
         let rssItems = [];
         let rssIndex = 0;
         let rssTimer = null;
+        let rssDisplayStartedAt = null;
+
+        function rssItemDurationMs(item) {
+            return (item.duration || 15) * 1000;
+        }
+
+        function clearRssTimer() {
+            if (rssTimer) {
+                clearTimeout(rssTimer);
+                rssTimer = null;
+            }
+        }
+
+        function getRssRemainingMs() {
+            if (!rssDisplayStartedAt || rssItems.length === 0) return 0;
+            var item = rssItems[rssIndex];
+            if (!item) return 0;
+            var elapsed = Date.now() - rssDisplayStartedAt;
+            return Math.max(0, rssItemDurationMs(item) - elapsed);
+        }
+
+        function stopRssPlayback() {
+            clearRssTimer();
+            rssDisplayStartedAt = null;
+            rssItems = [];
+            rssIndex = 0;
+        }
 
         (function initMarked() {
             if (typeof marked === 'undefined') return;
@@ -1210,33 +1237,58 @@
             return !hasContent && hasDuration;
         }
 
-        function advanceRss() {
-            if (rssItems.length === 0) return;
-            var item = rssItems[rssIndex];
+        function displayRssSlot(item) {
             var el = document.getElementById('rss-feed');
-            var durationMs = (item.duration || 15) * 1000;
-
             if (isBlankRssItem(item)) {
                 document.body.classList.add('rss-blank-item');
                 if (el) {
                     el.style.display = 'none';
                     el.innerHTML = '';
                 }
-                rssTimer = setTimeout(function() {
-                    document.body.classList.remove('rss-blank-item');
-                    if (el) el.style.display = '';
-                    rssIndex = (rssIndex + 1) % rssItems.length;
-                    advanceRss();
-                }, durationMs);
             } else {
                 document.body.classList.remove('rss-blank-item');
                 if (el) el.style.display = '';
                 renderRssItem(item);
-                rssTimer = setTimeout(function() {
-                    rssIndex = (rssIndex + 1) % rssItems.length;
-                    advanceRss();
-                }, durationMs);
             }
+        }
+
+        function scheduleRssSlotEnd(remainingMs, onAdvance) {
+            clearRssTimer();
+            var el = document.getElementById('rss-feed');
+            if (remainingMs <= 0) {
+                onAdvance();
+                return;
+            }
+            rssTimer = setTimeout(function() {
+                document.body.classList.remove('rss-blank-item');
+                if (el) el.style.display = '';
+                onAdvance();
+            }, remainingMs);
+        }
+
+        function advanceRss() {
+            if (rssItems.length === 0) return;
+            var item = rssItems[rssIndex];
+            var durationMs = rssItemDurationMs(item);
+            rssDisplayStartedAt = Date.now();
+            displayRssSlot(item);
+            scheduleRssSlotEnd(durationMs, function() {
+                rssIndex = (rssIndex + 1) % rssItems.length;
+                advanceRss();
+            });
+        }
+
+        function resumeRss(remainingMs) {
+            if (rssItems.length === 0) return;
+            var item = rssItems[rssIndex];
+            var durationMs = rssItemDurationMs(item);
+            if (remainingMs > durationMs) remainingMs = durationMs;
+            rssDisplayStartedAt = Date.now() - (durationMs - remainingMs);
+            displayRssSlot(item);
+            scheduleRssSlotEnd(remainingMs, function() {
+                rssIndex = (rssIndex + 1) % rssItems.length;
+                advanceRss();
+            });
         }
 
         async function fetchAndStartRss() {
@@ -1244,6 +1296,7 @@
             try {
                 const res = await fetch(rssFeedJsonUrl());
                 if (!res.ok) {
+                    stopRssPlayback();
                     if (el) el.style.display = 'none';
                     if (el) el.setAttribute('data-loaded', 'true');
                     document.body.classList.remove('rss-feed-visible');
@@ -1252,6 +1305,7 @@
                 const data = await res.json();
                 const items = data.items || [];
                 if (items.length === 0) {
+                    stopRssPlayback();
                     if (el) el.style.display = 'none';
                     if (el) el.setAttribute('data-loaded', 'true');
                     document.body.classList.remove('rss-feed-visible');
@@ -1260,10 +1314,21 @@
                 if (el) el.style.display = '';
                 if (el) el.setAttribute('data-loaded', 'true');
                 document.body.classList.add('rss-feed-visible');
-                if (rssTimer) clearTimeout(rssTimer);
+
+                var wasPlaying = rssDisplayStartedAt !== null && rssItems.length > 0;
+                var savedIndex = rssIndex;
+                var remainingMs = wasPlaying ? getRssRemainingMs() : 0;
+
+                clearRssTimer();
                 rssItems = items;
-                rssIndex = 0;
-                advanceRss();
+
+                if (wasPlaying && savedIndex < items.length) {
+                    rssIndex = savedIndex;
+                    resumeRss(remainingMs);
+                } else {
+                    rssIndex = 0;
+                    advanceRss();
+                }
             } catch (e) {
                 console.warn('RSS fetch failed:', e);
                 if (el) el.style.display = 'none';
