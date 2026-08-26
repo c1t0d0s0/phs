@@ -58,12 +58,17 @@ function doGet() {
       rss += '<item>';
       rss += '<title>' + escapeXml(title) + '</title>';
       rss += '<description>' + escapeXml(text) + '</description>';
-      rss += '<duration>' + duration + '</duration>';
+      rss += '<duration>' + duration + '</duration>'; // 空の場合はサイネージ側で動画尺またはデフォルト15秒を適用
       rss += '<image>' + escapeXml(imageUrl) + '</image>';
-      rss += '<file>' + fileName + '</file>'
+      rss += '<file>' + fileName + '</file>' // 画像(.jpg, .png等)または動画(.mp4, .mov等)のファイル名
       rss += '<content:encoded><![CDATA[';
       if (imageUrl) {
-        rss += '<img src="' + imageUrl + '" style="max-width:100%;"><br>';
+        var isVideo = /\.(mp4|mov|webm|m4v)$/i.test(fileName || '');
+        if (isVideo) {
+          rss += '<video src="' + imageUrl + '" muted playsinline autoplay style="max-width:100%;"></video><br>';
+        } else {
+          rss += '<img src="' + imageUrl + '" style="max-width:100%;"><br>';
+        }
       }
       rss += '<p>' + text.replace(/\n/g, '<br>') + '</p>';
       rss += ']]></content:encoded>';

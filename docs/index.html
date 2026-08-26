@@ -103,7 +103,8 @@
             margin-bottom: 8px;
         }
 
-        .top-right .rss-image-wrap .rss-image {
+        .top-right .rss-image-wrap .rss-image,
+        .top-right .rss-image-wrap .rss-video {
             max-width: 100%;
             max-height: 100%;
             width: auto;
@@ -514,7 +515,8 @@
                 min-height: 0;
                 min-width: 0;
             }
-            .top-right .rss-image-wrap .rss-image {
+            .top-right .rss-image-wrap .rss-image,
+            .top-right .rss-image-wrap .rss-video {
                 max-width: 100%;
                 max-height: 100%;
             }
@@ -1133,6 +1135,14 @@
         }
 
         // --- RSS feed (notices): Markdown + HTML for styling (links not allowed) ---
+        const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.webm', '.m4v'];
+
+        function isVideoUrl(url) {
+            if (!url) return false;
+            const clean = url.split('?')[0].toLowerCase();
+            return VIDEO_EXTENSIONS.some(function(ext) { return clean.endsWith(ext); });
+        }
+
         function isRssTestMode() {
             return new URLSearchParams(window.location.search).has('test');
         }
@@ -1149,10 +1159,8 @@
         let rssIndex = 0;
         let rssTimer = null;
         let rssDisplayStartedAt = null;
-
-        function rssItemDurationMs(item) {
-            return (item.duration || 15) * 1000;
-        }
+        let rssCurrentDurationMs = 15000;
+        let rssSlotEndedHandled = false;
 
         function clearRssTimer() {
             if (rssTimer) {
@@ -1163,10 +1171,8 @@
 
         function getRssRemainingMs() {
             if (!rssDisplayStartedAt || rssItems.length === 0) return 0;
-            var item = rssItems[rssIndex];
-            if (!item) return 0;
             var elapsed = Date.now() - rssDisplayStartedAt;
-            return Math.max(0, rssItemDurationMs(item) - elapsed);
+            return Math.max(0, rssCurrentDurationMs - elapsed);
         }
 
         function stopRssPlayback() {
@@ -1174,6 +1180,7 @@
             rssDisplayStartedAt = null;
             rssItems = [];
             rssIndex = 0;
+            rssCurrentDurationMs = 15000;
         }
 
         (function initMarked() {
@@ -1210,13 +1217,21 @@
             if (item.title) {
                 parts.push('<div class="rss-title">' + escapeHtml(item.title) + '</div>');
             }
-            var imgSrc = rssItemImageSrc(item);
-            if (imgSrc) {
-                parts.push(
-                    '<div class="rss-image-wrap">' +
-                    '<img class="rss-image" src="' + escapeHtml(imgSrc) + '" alt="">' +
-                    '</div>'
-                );
+            var mediaSrc = rssItemImageSrc(item);
+            if (mediaSrc) {
+                if (isVideoUrl(mediaSrc)) {
+                    parts.push(
+                        '<div class="rss-image-wrap">' +
+                        '<video class="rss-video" src="' + escapeHtml(mediaSrc) + '" muted autoplay playsinline preload="auto"></video>' +
+                        '</div>'
+                    );
+                } else {
+                    parts.push(
+                        '<div class="rss-image-wrap">' +
+                        '<img class="rss-image" src="' + escapeHtml(mediaSrc) + '" alt="">' +
+                        '</div>'
+                    );
+                }
             }
             if (item.description) {
                 var raw = (typeof marked !== 'undefined') ? marked.parse(item.description) : escapeHtml(item.description).replace(/\n/g, '<br>');
@@ -1237,57 +1252,129 @@
             return !hasContent && hasDuration;
         }
 
-        function displayRssSlot(item) {
+        function displayRssSlot(item, onDurationReady) {
             var el = document.getElementById('rss-feed');
+            rssSlotEndedHandled = false;
+
             if (isBlankRssItem(item)) {
                 document.body.classList.add('rss-blank-item');
                 if (el) {
                     el.style.display = 'none';
                     el.innerHTML = '';
                 }
-            } else {
-                document.body.classList.remove('rss-blank-item');
-                if (el) el.style.display = '';
-                renderRssItem(item);
+                var durMs = (item.duration || 15) * 1000;
+                onDurationReady(durMs);
+                return;
             }
+
+            document.body.classList.remove('rss-blank-item');
+            if (el) el.style.display = '';
+            renderRssItem(item);
+
+            var mediaSrc = rssItemImageSrc(item);
+            if (mediaSrc && isVideoUrl(mediaSrc) && el) {
+                var videoEl = el.querySelector('video.rss-video');
+                if (videoEl) {
+                    videoEl.muted = true;
+                    videoEl.volume = 0;
+                    videoEl.play().catch(function(e) {
+                        console.warn('Video play prevented/failed:', e);
+                    });
+
+                    // Explicit duration specified
+                    if (typeof item.duration === 'number' && item.duration > 0) {
+                        onDurationReady(item.duration * 1000);
+                        return;
+                    }
+
+                    // Duration unspecified -> sync with video duration
+                    var durationDetermined = false;
+                    function applyVideoDuration() {
+                        if (durationDetermined) return;
+                        durationDetermined = true;
+                        var durSec = videoEl.duration;
+                        var durMs = (isFinite(durSec) && durSec > 0) ? Math.ceil(durSec * 1000) : 15000;
+                        onDurationReady(durMs);
+                    }
+
+                    if (isFinite(videoEl.duration) && videoEl.duration > 0) {
+                        applyVideoDuration();
+                    } else {
+                        videoEl.addEventListener('loadedmetadata', applyVideoDuration, { once: true });
+                        videoEl.addEventListener('error', function() {
+                            if (!durationDetermined) {
+                                durationDetermined = true;
+                                onDurationReady(15000);
+                            }
+                        }, { once: true });
+                        // Fallback in case metadata takes too long
+                        setTimeout(function() {
+                            if (!durationDetermined) {
+                                applyVideoDuration();
+                            }
+                        }, 4000);
+                    }
+
+                    // Also handle video ended event to advance immediately on finish
+                    videoEl.addEventListener('ended', function() {
+                        if (!rssSlotEndedHandled) {
+                            rssSlotEndedHandled = true;
+                            clearRssTimer();
+                            advanceToNextRss();
+                        }
+                    }, { once: true });
+                    return;
+                }
+            }
+
+            var defaultDurMs = (typeof item.duration === 'number' && item.duration > 0 ? item.duration : 15) * 1000;
+            onDurationReady(defaultDurMs);
         }
 
         function scheduleRssSlotEnd(remainingMs, onAdvance) {
             clearRssTimer();
             var el = document.getElementById('rss-feed');
             if (remainingMs <= 0) {
-                onAdvance();
+                if (!rssSlotEndedHandled) {
+                    rssSlotEndedHandled = true;
+                    onAdvance();
+                }
                 return;
             }
             rssTimer = setTimeout(function() {
-                document.body.classList.remove('rss-blank-item');
-                if (el) el.style.display = '';
-                onAdvance();
+                if (!rssSlotEndedHandled) {
+                    rssSlotEndedHandled = true;
+                    document.body.classList.remove('rss-blank-item');
+                    if (el) el.style.display = '';
+                    onAdvance();
+                }
             }, remainingMs);
+        }
+
+        function advanceToNextRss() {
+            if (rssItems.length === 0) return;
+            rssIndex = (rssIndex + 1) % rssItems.length;
+            advanceRss();
         }
 
         function advanceRss() {
             if (rssItems.length === 0) return;
             var item = rssItems[rssIndex];
-            var durationMs = rssItemDurationMs(item);
-            rssDisplayStartedAt = Date.now();
-            displayRssSlot(item);
-            scheduleRssSlotEnd(durationMs, function() {
-                rssIndex = (rssIndex + 1) % rssItems.length;
-                advanceRss();
+            displayRssSlot(item, function(durationMs) {
+                rssCurrentDurationMs = durationMs;
+                rssDisplayStartedAt = Date.now();
+                scheduleRssSlotEnd(durationMs, advanceToNextRss);
             });
         }
 
         function resumeRss(remainingMs) {
             if (rssItems.length === 0) return;
             var item = rssItems[rssIndex];
-            var durationMs = rssItemDurationMs(item);
-            if (remainingMs > durationMs) remainingMs = durationMs;
-            rssDisplayStartedAt = Date.now() - (durationMs - remainingMs);
-            displayRssSlot(item);
-            scheduleRssSlotEnd(remainingMs, function() {
-                rssIndex = (rssIndex + 1) % rssItems.length;
-                advanceRss();
+            displayRssSlot(item, function(durationMs) {
+                rssCurrentDurationMs = durationMs;
+                if (remainingMs > durationMs) remainingMs = durationMs;
+                rssDisplayStartedAt = Date.now() - (durationMs - remainingMs);
+                scheduleRssSlotEnd(remainingMs, advanceToNextRss);
             });
         }
 
@@ -1314,6 +1401,13 @@
                 if (el) el.style.display = '';
                 if (el) el.setAttribute('data-loaded', 'true');
                 document.body.classList.add('rss-feed-visible');
+
+                // Check if items changed
+                const itemsUnchanged = rssItems.length > 0 && JSON.stringify(items) === JSON.stringify(rssItems);
+                if (itemsUnchanged && rssDisplayStartedAt !== null) {
+                    // RSS content has not changed; do not interrupt playing video or current slot
+                    return;
+                }
 
                 var wasPlaying = rssDisplayStartedAt !== null && rssItems.length > 0;
                 var savedIndex = rssIndex;

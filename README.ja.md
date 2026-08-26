@@ -33,10 +33,11 @@ GitHub Actionsの定期実行（cron）によって以下のデータを自動�
 
 4. **RSSフィードのデータ** (`docs/rss.json`)
    * **取得元:** Google Apps Scriptで設定したRSSフィード
-   * **RSSフィードのURL** scripts/rss.py内の `RSS_URL` で指定
+   * **RSSフィードのURL:** scripts/rss.py内の `RSS_URL` で指定
    * **更新頻度:** 毎時 22分 (JST)
    * **ワークフロー:** `.github/workflows/hourly-rss-fetch.yml`
    * **スクリプト:** `scripts/rss.py`
+   * **メディア・動画対応:** 画像（`.jpg`, `.png` 等）に加え、動画（`.mp4`, `.mov`, `.webm`, `.m4v` 等）の表示・再生に対応。動画は音声OFF（ミュート）で自動再生され、Durationが未指定の場合は自動的に動画の尺（長さ）に合わせて切り替わります。また、ダウンロードしたメディアはローカルにキャッシュされ、RSSフィードから削除されたタイミングでキャッシュも自動削除されます。
 
 5. **日本の祝日データ** (`docs/date.json`)
    * **取得元:** `https://holidays-jp.github.io/api/v1/date.json`
@@ -80,3 +81,24 @@ cd docs
 python -m http.server 8000
 # ブラウザで http://localhost:8000 にアクセス
 ```
+
+## Google Apps Script (signage.gs) の更新・デプロイ手順
+
+Google Apps Script (GAS) の Web アプリ URL（`scripts/rss.py` の `RSS_URL`）を変更することなく、最新の `scripts/signage.gs` のコードを反映させるには、**「デプロイを管理」** から新バージョンを作成して更新します。
+
+1. **Google Apps Script エディタを開く**:
+   * 対象のスプレッドシートを開き、メニューの「拡張機能」>「Apps Script」を選択します。
+2. **コードの更新**:
+   * エディタ内のコードをリポジトリの `scripts/signage.gs` の内容に置き換えます。
+   * ※ 冒頭の `SpreadsheetApp.openById("xxxxxxxxxxxxxxxxxxxxxx")` に設定されている既存のスプレッドシートIDは変更せずそのまま維持してください。
+   * エディタ上部の保存アイコン（または `Ctrl+S` / `Cmd+S`）を押して保存します。
+3. **デプロイの更新（URLを維持）**:
+   * 画面右上の **「デプロイ」** ボタンをクリックし、**「デプロイを管理」** を選択します。
+     > ⚠️ **注意:** 「新しいデプロイ」を選択すると新しいURLが発行されてしまうため、既存URLを維持する場合は必ず「**デプロイを管理**」を選択してください。
+   * 左側のリストから現在使用中の **「ウェブアプリ」**（アクティブなデプロイ）を選択します。
+   * 右上の **鉛筆アイコン（編集）** をクリックします。
+   * **「バージョン」** のプルダウンメニューから **「新バージョン」** を選択します（必要に応じて説明を入力）。
+   * 右下の **「デプロイ」** ボタンをクリックします。
+4. **完了**:
+   * 既存の Web アプリ URL を変えずに最新のコードが反映されます。
+
