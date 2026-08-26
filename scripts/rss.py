@@ -24,19 +24,35 @@ RSS_TEST_URL = "https://script.google.com/macros/s/AKfycby5SjZ6wJ03ft3a-RmYlEu9S
 CONTENT_NS = "http://purl.org/rss/1.0/modules/content/"
 
 
+VIDEO_EXTENSIONS = {".mp4", ".mov", ".webm", ".m4v"}
+
+
+def is_video_filename(filename):
+    if not filename:
+        return False
+    ext = os.path.splitext(filename.split("?")[0])[1].lower()
+    return ext in VIDEO_EXTENSIONS
+
+
 def text_or_empty(node):
     if node is None:
         return ""
     return (node.text or "").strip()
 
 
-def download_image(url, images_dir, save_filename, image_index=0, timeout=30):
-    """Download image from url to images_dir. save_filename: basename from RSS file element.
+def download_media(url, images_dir, save_filename, image_index=0, timeout=60):
+    """Download image or video from url to images_dir. save_filename: basename from RSS file element.
+    Caches downloaded files locally and skips download if already present.
     Follows redirects (e.g. Google Drive shared URLs)."""
     try:
         save_filename = os.path.basename(save_filename).strip()
         save_filename = re.sub(r"[^\w.\-]", "_", save_filename) or f"file_{image_index}"
         path = os.path.join(images_dir, save_filename)
+
+        # Local cache check: if file exists and is not empty, reuse cached file
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return path
+
         session = requests.Session()
         session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -53,23 +69,25 @@ def download_image(url, images_dir, save_filename, image_index=0, timeout=30):
                 if chunk:
                     f.write(chunk)
 
-        # 横幅が 860px を超える場合はアスペクト比を保って 860px にリサイズ（JPEG/PNG 対応）
-        try:
-            with Image.open(path) as img:
-                w, h = img.size
-                if w > 860:
-                    ratio = 860 / w
-                    new_size = (860, int(round(h * ratio)))
-                    img = img.resize(new_size, Image.Resampling.LANCZOS)
-                    ext = os.path.splitext(path)[1].lower()
-                    if ext == ".png":
-                        img.save(path, optimize=True)
-                    else:
-                        if img.mode in ("RGBA", "P"):
-                            img = img.convert("RGB")
-                        img.save(path, "JPEG", quality=95, optimize=True)
-        except Exception:
-            pass
+        # 動画ファイルの場合はリサイズをスキップ
+        if not is_video_filename(save_filename):
+            # 横幅が 860px を超える場合はアスペクト比を保って 860px にリサイズ（JPEG/PNG 対応）
+            try:
+                with Image.open(path) as img:
+                    w, h = img.size
+                    if w > 860:
+                        ratio = 860 / w
+                        new_size = (860, int(round(h * ratio)))
+                        img = img.resize(new_size, Image.Resampling.LANCZOS)
+                        ext = os.path.splitext(path)[1].lower()
+                        if ext == ".png":
+                            img.save(path, optimize=True)
+                        else:
+                            if img.mode in ("RGBA", "P"):
+                                img = img.convert("RGB")
+                            img.save(path, "JPEG", quality=95, optimize=True)
+            except Exception:
+                pass
 
         return path
     except Exception:
@@ -84,12 +102,14 @@ def parse_item(item, out_dir=None, image_index=None, images_subdir="images"):
     description = text_or_empty(desc_el) if desc_el is not None else ""
 
     duration_el = item.find("duration")
-    duration_str = text_or_empty(duration_el) if duration_el is not None else "15"
-    try:
-        duration = int(duration_str)
-    except ValueError:
-        duration = 15
-    duration = max(1, min(300, duration))  # clamp 1–300 seconds
+    duration_str = text_or_empty(duration_el) if duration_el is not None else ""
+    duration = None
+    if duration_str:
+        try:
+            duration = int(duration_str)
+            duration = max(1, min(300, duration))  # clamp 1–300 seconds
+        except ValueError:
+            duration = None
 
     image_el = item.find("image")
     image_url = text_or_empty(image_el) if image_el is not None else ""
@@ -106,7 +126,7 @@ def parse_item(item, out_dir=None, image_index=None, images_subdir="images"):
     if out_dir and image_url and file_name and image_index is not None:
         images_dir = os.path.join(out_dir, images_subdir)
         os.makedirs(images_dir, exist_ok=True)
-        path = download_image(
+        path = download_media(
             image_url, images_dir, save_filename=file_name, image_index=image_index
         )
         if path:
@@ -128,7 +148,7 @@ def main():
         "out_dir",
         nargs="?",
         default="docs",
-        help="Directory for downloaded images (default: docs)",
+        help="Directory for downloaded images/videos (default: docs)",
     )
     parser.add_argument(
         "--test",
@@ -173,7 +193,7 @@ def main():
             image_counter += 1
         items.append(parsed)
 
-    # Remove unreferenced images only in the directory used for this run
+    # Remove unreferenced media only in the directory used for this run
     if out_dir:
         images_dir = os.path.join(out_dir, images_subdir)
         used_basenames = {

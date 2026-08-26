@@ -40,7 +40,7 @@ flowchart LR
   actions_deploy -->|Deploy| pages
 
   drive -->|Spreadsheet| apps
-  drive -->|Image Files| actions_rss
+  drive -->|Image & Video Files| actions_rss
   apps -->|RSS Feed| actions_rss
   actions_rss -->|Deploy| pages
 
@@ -55,5 +55,5 @@ flowchart LR
 
   pages --> web_browser
 
-  web_browser2 -->|Edit Spreadsheet<br>Upload Image Files| drive
+  web_browser2 -->|Edit Spreadsheet<br>Upload Media Files| drive
 ```

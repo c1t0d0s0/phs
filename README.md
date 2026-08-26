@@ -36,6 +36,7 @@ The following data is fetched automatically by GitHub Actions (cron) and saved a
    * **Update frequency:** Every hour at 22 minutes past (JST)
    * **Workflow:** `.github/workflows/hourly-rss-fetch.yml`
    * **Script:** `scripts/rss.py`
+   * **Media & Video Support:** Supports video playback (`.mp4`, `.mov`, `.webm`, `.m4v`) in addition to images (`.jpg`, `.png`, etc.). Videos are played automatically with audio muted. When duration is unspecified, playback time automatically syncs to the video duration. Downloaded media files are cached locally and automatically cleaned up when removed from the RSS feed.
 
 5. **Japanese Public Holiday Data** (`docs/date.json`)
    * **Source:** `https://holidays-jp.github.io/api/v1/date.json`
@@ -79,3 +80,24 @@ cd docs
 python -m http.server 8000
 # Open http://localhost:8000 in your browser
 ```
+
+## Updating Google Apps Script (signage.gs)
+
+To update the Google Apps Script (GAS) Web App with the latest `scripts/signage.gs` code without changing the existing Web App URL (configured as `RSS_URL` in `scripts/rss.py`), update the deployment via **"Manage deployments"**:
+
+1. **Open the Apps Script Editor**:
+   * Open your Google Spreadsheet, then select "Extensions" > "Apps Script".
+2. **Update the Code**:
+   * Replace the editor code with the content of `scripts/signage.gs`.
+   * Keep your existing spreadsheet ID in `SpreadsheetApp.openById("...")`.
+   * Save the project (`Ctrl+S` / `Cmd+S`).
+3. **Update Deployment (Preserves Existing URL)**:
+   * Click the **"Deploy"** button in the top right and select **"Manage deployments"**.
+     > ⚠️ **Note:** Do NOT select "New deployment", as that will generate a new URL. Always choose **"Manage deployments"** to maintain the current URL.
+   * Select the active **"Web app"** deployment from the left sidebar.
+   * Click the **pencil icon (Edit)** in the top right.
+   * Under **"Version"**, select **"New version"**.
+   * Click the **"Deploy"** button at the bottom right.
+4. **Done**:
+   * The updated code will now be served at the existing Web App URL.
+
