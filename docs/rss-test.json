@@ -1,28 +1,4 @@
 {
   "items": [
-    {
-      "title": "",
-      "description": "",
-      "content": "<p></p>",
-      "duration": 5,
-      "image": "",
-      "file": ""
-    },
-    {
-      "title": "おひさまっこ通信 8月",
-      "description": "",
-      "content": "<img src=\"https://drive.google.com/uc?export=view&id=1oLvAVxVN2xLzPq1OLANB7Hj_-tX-hc45\" style=\"max-width:100%;\"><br><p></p>",
-      "duration": 15,
-      "image": "images-test/20260801_ohisamakko2.png",
-      "file": "20260801_ohisamakko2.png"
-    },
-    {
-      "title": "プラリバ通信（小学生）8月",
-      "description": "",
-      "content": "<img src=\"https://drive.google.com/uc?export=view&id=17bH2JGQFUsSnzpoYpA46id7Mi9Ln2u3N\" style=\"max-width:100%;\"><br><p></p>",
-      "duration": 15,
-      "image": "images-test/20260801_plaliba.png",
-      "file": "20260801_plaliba.png"
-    }
   ]
 }
