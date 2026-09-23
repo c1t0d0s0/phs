@@ -1473,7 +1473,14 @@
             const sunsetMin = eh * 60 + em;
 
             const isDay = currentMinutes >= sunriseMin && currentMinutes < sunsetMin;
-            const image = isDay ? 'background.jpg' : 'night.jpg';
+            let image;
+            if (currentMinutes >= sunriseMin && currentMinutes < sunriseMin + 60) {
+                image = 'sunrise.jpg';
+            } else if (currentMinutes >= sunsetMin - 60 && currentMinutes < sunsetMin) {
+                image = 'sunset.jpg';
+            } else {
+                image = isDay ? 'background.jpg' : 'night.jpg';
+            }
             document.body.style.backgroundImage =
                 "linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('" + image + "')";
         }
